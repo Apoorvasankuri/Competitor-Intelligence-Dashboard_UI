@@ -9,10 +9,12 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --ivory-linen: #F9F8F3; --pure-white: #FFFFFF; --deep-forest: #1B4332;
-            --sage-bold: #2D6A4F; --charcoal: #2C2C2C; --text-body: #333333;
-            --champagne-silt: #E5E2D0; --watermark-edge: #F2F0E4;
-            --text-secondary: #666666; --navy: #0F2B4C; --navy-light: #1A3D6D; --gold-accent: #C9A84C;
+            --ivory-linen: #F9F8F3; --pure-white: #FFFFFF; --charcoal: #2C2C2C;
+            --text-body: #333333; --champagne-silt: #E5E2D0; --watermark-edge: #F2F0E4;
+            --text-secondary: #666666;
+            --navy: #0F2B4C; --navy-light: #1A3D6D; --navy-mid: #244E7F;
+            --blue-accent: #2E6EB5; --blue-pale: rgba(30,74,138,0.08);
+            --blue-border: rgba(30,74,138,0.2); --gold-accent: #C9A84C;
         }
         body {
             font-family: 'Montserrat', 'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -21,19 +23,14 @@
         }
         body::before {
             content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background-image: linear-gradient(rgba(27,67,50,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(27,67,50,0.02) 1px, transparent 1px);
+            background-image: linear-gradient(rgba(15,43,76,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(15,43,76,0.02) 1px, transparent 1px);
             background-size: 60px 60px; pointer-events: none; z-index: 0;
         }
         .container { position: relative; z-index: 1; max-width: 1600px; margin: 0 auto; padding: 0 24px; }
-
-        /* REDESIGNED HEADER */
         .header {
-            padding: 0;
-            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 60%, #244E7F 100%);
-            position: sticky; top: 0; z-index: 100;
-            animation: slideDown 0.6s ease-out;
-            box-shadow: 0 4px 30px rgba(15, 43, 76, 0.25);
-            border-bottom: 3px solid var(--gold-accent);
+            padding: 0; background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 60%, var(--navy-mid) 100%);
+            position: sticky; top: 0; z-index: 100; animation: slideDown 0.6s ease-out;
+            box-shadow: 0 4px 30px rgba(15,43,76,0.25); border-bottom: 3px solid var(--gold-accent);
         }
         .header::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -42,133 +39,79 @@
             pointer-events: none;
         }
         @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .header-content {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 20px 32px; margin: 0 -24px; position: relative; z-index: 1;
-        }
-        .logo-section { display: flex; align-items: center; gap: 32px; flex: 0 0 auto; }
+        .header-content { display: flex; justify-content: space-between; align-items: center; padding: 20px 32px; margin: 0 -24px; position: relative; z-index: 1; }
+        .logo-section { display: flex; align-items: center; flex: 0 0 auto; }
         .ivy-brand-block { display: flex; flex-direction: column; align-items: flex-start; }
-        .ivy-brand {
-            font-family: 'Montserrat', sans-serif; font-size: 28px; color: #FFFFFF;
-            font-weight: 700; letter-spacing: 4px; text-transform: uppercase; line-height: 1;
-        }
+        .ivy-brand { font-family: 'Montserrat', sans-serif; font-size: 28px; color: #FFFFFF; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; line-height: 1; }
         .brand-divider { width: 40px; height: 2px; background: var(--gold-accent); margin: 8px 0; border-radius: 1px; }
-        .brand-caption {
-            font-family: 'Montserrat', sans-serif; font-size: 11px; color: rgba(255,255,255,0.6);
-            font-weight: 400; letter-spacing: 2px; text-transform: uppercase;
-        }
+        .brand-caption { font-family: 'Montserrat', sans-serif; font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 400; letter-spacing: 2px; text-transform: uppercase; }
         .header-center { flex: 1; text-align: center; }
-        .header-title h1 {
-            font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700;
-            letter-spacing: -0.3px; color: #FFFFFF; line-height: 1.2; margin: 0;
-        }
-        .header-subtitle {
-            font-family: 'Montserrat', sans-serif; font-size: 12px; color: var(--gold-accent);
-            font-weight: 500; letter-spacing: 3px; text-transform: uppercase; margin-top: 6px;
-        }
-        .header-right { display: flex; align-items: center; gap: 16px; flex: 0 0 auto; }
-        .refresh-btn {
-            background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8);
-            border: 1px solid rgba(255,255,255,0.15); padding: 10px 20px; border-radius: 6px;
-            cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Montserrat', sans-serif;
-            transition: all 0.3s ease; letter-spacing: 0.3px; display: flex; align-items: center; gap: 8px;
-        }
-        .refresh-btn:hover {
-            background: rgba(255,255,255,0.15); color: #FFFFFF;
-            border-color: rgba(255,255,255,0.3); transform: translateY(-1px);
-        }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; letter-spacing: -0.3px; color: #FFFFFF; line-height: 1.2; margin: 0; }
+        .header-subtitle { font-family: 'Montserrat', sans-serif; font-size: 12px; color: var(--gold-accent); font-weight: 500; letter-spacing: 3px; text-transform: uppercase; margin-top: 6px; }
+        .header-right { display: flex; align-items: center; flex: 0 0 auto; }
+        .kec-logo { height: 50px; width: auto; object-fit: contain; }
+        .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--champagne-silt); }
+        .toolbar-left { display: flex; align-items: center; gap: 16px; }
+        .refresh-btn { background: var(--navy); color: #FFFFFF; border: none; padding: 10px 22px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Montserrat', sans-serif; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; }
+        .refresh-btn:hover { background: var(--navy-light); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,43,76,0.2); }
         .refresh-icon { display: inline-block; transition: transform 0.4s ease; }
         .refresh-btn:hover .refresh-icon { transform: rotate(180deg); }
-        .status-badge {
-            display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px;
-            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 20px; font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 600;
-        }
-        .status-badge.success { background: rgba(45,106,79,0.2); border-color: rgba(45,106,79,0.4); color: #6BCB77; }
-        .status-badge.error { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); color: #FCA5A5; }
-        .status-badge.loading { background: rgba(201,168,76,0.15); border-color: rgba(201,168,76,0.3); color: var(--gold-accent); }
-        .status-dot { width: 7px; height: 7px; background: currentColor; border-radius: 50%; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-        /* NAVIGATION TABS */
-        .nav-tabs {
-            display: flex; gap: 8px; padding: 28px 0; border-bottom: 2px solid var(--champagne-silt);
-            animation: fadeIn 0.8s ease-out 0.2s backwards; align-items: center;
-        }
+        .toolbar-right { display: flex; align-items: center; gap: 10px; }
+        .page-size-label { font-size: 13px; font-weight: 600; color: var(--text-body); }
+        .page-size-select { padding: 8px 12px; background: var(--pure-white); border: 1px solid var(--champagne-silt); border-radius: 6px; color: var(--charcoal); font-size: 13px; font-family: 'Montserrat', sans-serif; cursor: pointer; }
+        .page-size-select:focus { outline: none; border-color: var(--navy); }
+        .nav-tabs { display: flex; gap: 8px; padding: 28px 0; border-bottom: 2px solid var(--champagne-silt); animation: fadeIn 0.8s ease-out 0.2s backwards; align-items: center; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .tab-btn {
-            padding: 12px 28px; background: transparent; border: 2px solid var(--champagne-silt);
-            color: var(--navy); border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 600;
-            font-family: 'Montserrat', sans-serif; transition: all 0.3s ease; letter-spacing: 0.3px;
-        }
+        .tab-btn { padding: 12px 28px; background: transparent; border: 2px solid var(--champagne-silt); color: var(--navy); border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 600; font-family: 'Montserrat', sans-serif; transition: all 0.3s ease; letter-spacing: 0.3px; }
         .tab-btn:hover { border-color: var(--navy-light); color: var(--navy-light); }
         .tab-btn.active { background: var(--navy); color: #F9F8F3; border-color: var(--navy); box-shadow: 0 4px 16px rgba(15,43,76,0.2); }
-
-        /* ALL OTHER STYLES UNCHANGED */
         .content-area { padding: 40px 0; animation: fadeIn 1s ease-out 0.4s backwards; }
-        .filter-panel {
-            background: var(--pure-white); border-radius: 8px; padding: 24px;
-            border: 1px solid var(--champagne-silt); position: sticky; top: 140px;
-            max-height: calc(100vh - 200px); overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-        }
-        .filter-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-bottom: 24px; color: var(--deep-forest); }
+        .filter-panel { background: var(--pure-white); border-radius: 8px; padding: 24px; border: 1px solid var(--champagne-silt); position: sticky; top: 140px; max-height: calc(100vh - 200px); overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+        .filter-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-bottom: 24px; color: var(--navy); }
         .filter-group { margin-bottom: 20px; }
         .filter-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-body); margin-bottom: 8px; letter-spacing: 0.5px; text-transform: uppercase; }
-        .filter-select {
-            width: 100%; padding: 12px 16px; background: var(--ivory-linen);
-            border: 1px solid var(--champagne-silt); border-radius: 6px; color: var(--charcoal);
-            font-size: 14px; font-family: 'Montserrat', sans-serif; cursor: pointer; transition: all 0.3s ease;
-        }
-        .filter-select:hover { border-color: var(--sage-bold); }
-        .filter-select:focus { outline: none; border-color: var(--deep-forest); box-shadow: 0 0 0 3px rgba(27,67,50,0.08); }
+        .filter-select { width: 100%; padding: 12px 16px; background: var(--ivory-linen); border: 1px solid var(--champagne-silt); border-radius: 6px; color: var(--charcoal); font-size: 14px; font-family: 'Montserrat', sans-serif; cursor: pointer; transition: all 0.3s ease; }
+        .filter-select:hover { border-color: var(--blue-accent); }
+        .filter-select:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(15,43,76,0.08); }
         .filter-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
-        .filter-btn {
-            padding: 12px; border: 2px solid var(--champagne-silt); border-radius: 6px; background: transparent;
-            color: var(--deep-forest); font-size: 14px; font-weight: 600; cursor: pointer;
-            transition: all 0.3s ease; font-family: 'Montserrat', sans-serif;
-        }
-        .filter-btn.primary { background: var(--sage-bold); color: var(--ivory-linen); border-color: var(--sage-bold); }
-        .filter-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(27,67,50,0.1); }
-        .filter-btn.primary:hover { background: var(--deep-forest); border-color: var(--deep-forest); }
+        .filter-btn { padding: 12px; border: 2px solid var(--champagne-silt); border-radius: 6px; background: transparent; color: var(--navy); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-family: 'Montserrat', sans-serif; }
+        .filter-btn.primary { background: var(--navy); color: #FFFFFF; border-color: var(--navy); }
+        .filter-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(15,43,76,0.1); }
+        .filter-btn.primary:hover { background: var(--navy-light); border-color: var(--navy-light); }
         .articles-container { display: grid; gap: 24px; }
-        .category-header {
-            background: rgba(27,67,50,0.05); padding: 16px 24px; border-radius: 8px;
-            border-left: 4px solid var(--deep-forest); margin-bottom: 16px;
-            font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700;
-            letter-spacing: 0.5px; color: var(--deep-forest);
-        }
-        .article-card {
-            background: var(--pure-white); border-radius: 8px; padding: 24px;
-            border: 1px solid var(--champagne-silt); transition: all 0.3s ease; cursor: pointer;
-            position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-        }
-        .article-card::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
-            background: var(--deep-forest); transform: scaleY(0); transition: transform 0.3s ease;
-        }
-        .article-card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(27,67,50,0.12); border-color: var(--sage-bold); }
+        .category-header { background: var(--blue-pale); padding: 16px 24px; border-radius: 8px; border-left: 4px solid var(--navy); font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; letter-spacing: 0.5px; color: var(--navy); }
+        .article-card { background: var(--pure-white); border-radius: 8px; padding: 24px; border: 1px solid var(--champagne-silt); transition: all 0.3s ease; cursor: pointer; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+        .article-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--navy); transform: scaleY(0); transition: transform 0.3s ease; }
+        .article-card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(15,43,76,0.12); border-color: var(--blue-accent); }
         .article-card:hover::before { transform: scaleY(1); }
         .article-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-        .article-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--deep-forest); margin-bottom: 12px; line-height: 1.4; }
+        .article-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 12px; line-height: 1.4; }
         .article-meta { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
         .meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-body); font-weight: 500; }
-        .meta-icon { width: 16px; height: 16px; opacity: 0.6; stroke: var(--sage-bold); }
+        .meta-icon { width: 16px; height: 16px; opacity: 0.6; stroke: var(--blue-accent); }
+        .article-summary { font-size: 14px; color: var(--text-body); line-height: 1.6; margin-top: 8px; }
         .article-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-        .tag { padding: 6px 14px; background: rgba(45,106,79,0.08); border: 1px solid rgba(45,106,79,0.2); border-radius: 20px; font-size: 12px; color: var(--sage-bold); font-weight: 600; }
-        .tag.competitor { background: rgba(27,67,50,0.08); border-color: rgba(27,67,50,0.2); color: var(--deep-forest); }
+        .tag { padding: 6px 14px; background: var(--blue-pale); border: 1px solid var(--blue-border); border-radius: 20px; font-size: 12px; color: var(--blue-accent); font-weight: 600; }
+        .tag.competitor { background: rgba(15,43,76,0.08); border-color: rgba(15,43,76,0.2); color: var(--navy); }
         .two-column { display: grid; grid-template-columns: 280px 1fr; gap: 32px; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 32px; padding: 16px 0; }
+        .page-btn { padding: 8px 14px; border: 1px solid var(--champagne-silt); border-radius: 6px; background: var(--pure-white); color: var(--navy); font-size: 13px; font-weight: 600; font-family: 'Montserrat', sans-serif; cursor: pointer; transition: all 0.2s ease; min-width: 38px; text-align: center; }
+        .page-btn:hover { border-color: var(--navy); background: var(--blue-pale); }
+        .page-btn.active { background: var(--navy); color: #FFFFFF; border-color: var(--navy); }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .page-info { font-size: 13px; color: var(--text-secondary); font-weight: 500; margin: 0 8px; }
         .empty-state { text-align: center; padding: 80px 40px; background: var(--pure-white); border-radius: 8px; border: 2px dashed var(--champagne-silt); box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
         .empty-state-icon { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
-        .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 12px; color: var(--deep-forest); }
+        .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 12px; color: var(--navy); }
         .empty-state p { color: var(--text-body); font-size: 16px; line-height: 1.6; max-width: 500px; margin: 0 auto; }
-        .retry-btn { background: var(--sage-bold); color: var(--ivory-linen); border: none; padding: 14px 32px; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 600; font-family: 'Montserrat', sans-serif; transition: all 0.3s ease; box-shadow: 0 4px 20px rgba(45,106,79,0.2); }
-        .retry-btn:hover { background: var(--deep-forest); transform: translateY(-2px); }
+        .retry-btn { background: var(--navy); color: #FFFFFF; border: none; padding: 14px 32px; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 600; font-family: 'Montserrat', sans-serif; transition: all 0.3s ease; }
+        .retry-btn:hover { background: var(--navy-light); transform: translateY(-2px); }
         ::-webkit-scrollbar { width: 10px; }
         ::-webkit-scrollbar-track { background: var(--ivory-linen); }
         ::-webkit-scrollbar-thumb { background: var(--champagne-silt); border-radius: 5px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--sage-bold); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--blue-accent); }
         @media (max-width: 1024px) { .two-column { grid-template-columns: 1fr; } .filter-panel { position: relative; top: 0; max-height: none; } }
-        @media (max-width: 768px) { .header-content { flex-direction: column; gap: 16px; padding: 16px 20px; } .header-title h1 { font-size: 24px; } .header-center { order: -1; } .nav-tabs { overflow-x: auto; padding-bottom: 16px; } .tab-btn { white-space: nowrap; } }
+        @media (max-width: 768px) { .header-content { flex-direction: column; gap: 16px; padding: 16px 20px; } .header-title h1 { font-size: 24px; } .header-center { order: -1; } .nav-tabs { overflow-x: auto; padding-bottom: 16px; } .tab-btn { white-space: nowrap; } .toolbar { flex-direction: column; gap: 12px; align-items: flex-start; } }
     </style>
 </head>
 <body>
@@ -189,196 +132,219 @@
                     </div>
                 </div>
                 <div class="header-right">
-                    <span class="status-badge" id="statusBadge" style="display: none;">
-                        <span class="status-dot"></span>
-                        <span id="statusText">Data Synced</span>
-                    </span>
-                    <button class="refresh-btn" onclick="loadDataFromAPI()">
-                        <span class="refresh-icon">&#8635;</span> Refresh
-                    </button>
+                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAAyAFcDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDQ+MHxn+I+gfE7xBouk6+lvY2d35cEZsoX2rsU4yVJPJPWum/Zl+KPjnxn8QrjSfEesJeWaabJOsYtYo8OHjAOVUHoxrxj9oD/JLT4r/6//tNK2v2adbj8NeJvEmvyFQNP8N3U4z3YPFtH4tgfjXrSpR9jdLWxF9TpfhV8dvHVl8R9c0/w1rUVrpVnc22hT7JFJkoeOVUE7VUcf7VfJUskksrzTuWldm8jHuxOSfzJr7g/Zy8Nnw58EbESxlLrUopNQnBHOZBlB+CBBXy38JfDKeLfG1tpEs5txFDJdTSKuSERc4HucgfjXLTrKE3K+yJsYFFeyfGT4P2ng3QYdc0DU7m+s/OSC5W6RVeNmBKkbRgjIIx7V4zWsJqavEbVgrW8I+ILzwn4isdf09I3ubGXzYllBKMcEYIBGRzWTRVNX0EfWPhP46eLdZ8Q2GkwaZpSyXU4jUsjkDP4163+0H8ZY/h8kWjaLBDea/cxeZiXJitYzwHcDlmODhcjpk8YzwHwi8O+G7z4Z6Vrlx4e0e6v5rTzZbm4sIpJHbcckswJJzX5/wDxm/5K54u/7DFx/wChmunDUpVKnNLZGU2kz7F+B/xr0j4hTf2ZeQR6XrkSF2ty5aO4UdWiJ5yOu08+hNfQdfkNoWs6l4f1e01jSbp7W+tJBLBMn3kYdDX6qeENYk17wjpGtTwJBLf2UN08SHIRZEDAZ9cGscTR9m7roVGVzYooorlKCiiigDzn4z/EKP4c+CZtaWBJ72WRbayicfI0rA8t3wACceuB3r83dQ1DUNb1S41PU7u4v764cu8szl3dj6k19Sft4a0yQeG/D8bfKzS30y+uMIh/9CrxT9nbw+Ne+L2hwyRhrawlOo3JI42xfMAfrIUH40YKKhBylu9hTd3Y+iPgB8JdB8G+G7HXr+xhuPEN3brcGWZA5tQ4DLGgPCkAgse+cdAKK96or0ZTcndkJWCiiipGBJzQvWiigABOetLRRTAKKKKAPk/9u3w/wCVrXh3xREn+vheyuGHqjb0/RnrH/Y78OjVvihe6zLGGi0exZ0J7Sy/IuPwEn5UUV6jf8As/zM+p9pUUUVxFhRRRQB/9k=" alt="KEC International" class="kec-logo">
                 </div>
             </div>
         </header>
-
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <button class="refresh-btn" onclick="loadDataFromAPI()"><span class="refresh-icon">&#8635;</span> Refresh Data</button>
+            </div>
+            <div class="toolbar-right">
+                <span class="page-size-label">Articles per page:</span>
+                <select class="page-size-select" id="pageSizeSelect" onchange="changePageSize()">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
         <nav class="nav-tabs" id="navTabs">
             <button class="tab-btn active" onclick="switchTab('executive')">Executive Summary</button>
             <button class="tab-btn" onclick="switchTab('competitor')">Competitor &amp; SBU</button>
             <button class="tab-btn" onclick="switchTab('industry')">Industry</button>
         </nav>
-
         <main class="content-area" id="contentArea"></main>
     </div>
-
     <script>
-        const API_BASE_URL = 'https://competitor-intelligence-dashboard.onrender.com';
-        let appData = { allArticles: [], execSummary: [], currentTab: 'executive', filters: { sbu: 'All', competitor: 'All', category: 'All' }, isLoading: false };
-
+        var API_BASE_URL = 'https://competitor-intelligence-dashboard.onrender.com';
+        var appData = { allArticles: [], currentTab: 'executive', filters: { sbu: 'All', competitor: 'All', category: 'All', period: 'All' }, isLoading: false, currentPage: 1, pageSize: 20 };
+        var COMPETITOR_ALIAS_MAP = {
+            'larsen & toubro': 'L&T', 'larsen and toubro': 'L&T', 'l&t ltd': 'L&T', 'l&t limited': 'L&T', 'l&t construction': 'L&T', 'l&t power': 'L&T', 'l&t metro': 'L&T', 'l&t': 'L&T',
+            'tata projects ltd': 'Tata Projects', 'tata projects limited': 'Tata Projects', 'tata projects': 'Tata Projects',
+            'kalpataru power transmission': 'Kalpataru', 'kalpataru projects international': 'Kalpataru', 'kptl': 'Kalpataru', 'kalpataru': 'Kalpataru',
+            'abb india': 'ABB', 'abb limited': 'ABB', 'abb ltd': 'ABB', 'abb': 'ABB',
+            'siemens india': 'Siemens', 'siemens limited': 'Siemens', 'siemens ag': 'Siemens', 'siemens': 'Siemens',
+            'ircon international': 'IRCON', 'ircon international ltd': 'IRCON', 'ircon': 'IRCON',
+            'rail vikas nigam': 'RVNL', 'rail vikas nigam limited': 'RVNL', 'rvnl': 'RVNL',
+            'sterling and wilson': 'Sterling & Wilson', 'sterling & wilson': 'Sterling & Wilson', 's&w': 'Sterling & Wilson', 'sterling and wilson renewable energy': 'Sterling & Wilson', 'sterling & wilson renewable energy': 'Sterling & Wilson',
+            'sterlite power': 'Sterlite', 'sterlite grid': 'Sterlite', 'sterlite': 'Sterlite',
+            'ncc': 'NCC', 'ncc limited': 'NCC', 'ncc ltd': 'NCC',
+            'shapoorji pallonji': 'Shapoorji', 'shapoorji': 'Shapoorji',
+            'pnc infratech': 'PNC', 'pnc': 'PNC',
+            'simplex infrastructures': 'Simplex', 'simplex': 'Simplex',
+            'renew power': 'ReNew', 'renew': 'ReNew', 'renew energy': 'ReNew',
+            'hero future energies': 'Hero Future', 'hero future': 'Hero Future',
+            'adani': 'Adani', 'adani transmission': 'Adani', 'adani energy solutions': 'Adani',
+            'megha engineering': 'Megha Engineering', 'meil': 'Megha Engineering',
+            'power grid': 'Power Grid', 'powergrid': 'Power Grid', 'pgcil': 'Power Grid',
+            'dilip buildcon': 'Dilip Buildcon', 'jmc projects': 'JMC Projects',
+            'hg infra': 'HG Infra', 'h.g. infra': 'HG Infra',
+            'techno electric': 'Techno Electric', 'cg power': 'CG Power', 'crompton greaves': 'CG Power',
+            'ge t&d': 'GE T&D', 'ge vernova': 'GE T&D'
+        };
+        function normalizeCompetitor(name) {
+            if (!name) return null;
+            var trimmed = name.trim();
+            if (trimmed === '-' || trimmed === '' || trimmed.toLowerCase() === 'none') return null;
+            var lower = trimmed.toLowerCase();
+            if (COMPETITOR_ALIAS_MAP[lower]) return COMPETITOR_ALIAS_MAP[lower];
+            return trimmed;
+        }
+        function extractUniqueCompetitors(articles) {
+            var set = new Set();
+            articles.forEach(function(a) { a.competitors.forEach(function(c) { if (c) set.add(c); }); });
+            return Array.from(set).sort();
+        }
+        function normalizeArticleCompetitors(rawList) {
+            var result = [];
+            rawList.forEach(function(c) { var norm = normalizeCompetitor(c); if (norm && result.indexOf(norm) === -1) result.push(norm); });
+            return result;
+        }
+        function getDateCutoff(period) {
+            if (period === 'All') return null;
+            var now = new Date(); var cutoff = new Date();
+            if (period === '7') cutoff.setDate(now.getDate() - 7);
+            else if (period === '15') cutoff.setDate(now.getDate() - 15);
+            else if (period === '30') cutoff.setDate(now.getDate() - 30);
+            else if (period === '90') cutoff.setDate(now.getDate() - 90);
+            else if (period === '180') cutoff.setDate(now.getDate() - 180);
+            return cutoff;
+        }
         function initApp() { loadDataFromAPI(); }
-
         async function loadDataFromAPI() {
             try {
                 appData.isLoading = true;
-                updateStatusBadge('Loading data...', 'loading');
-                const response = await fetch(API_BASE_URL + '/api/data');
+                var response = await fetch(API_BASE_URL + '/api/data');
                 if (!response.ok) throw new Error('API Error: ' + response.status);
-                const result = await response.json();
+                var result = await response.json();
                 if (result.status === 'success' && result.data) {
                     appData.allArticles = result.data.map(function(row) {
-                        return {
-                            title: row.newstitle || 'Untitled',
-                            date: row.publishedate || new Date().toISOString(),
-                            source: row.source || 'Unknown Source',
-                            link: row.link || '#',
-                            keyword: row.keyword || '',
-                            category: row.category_tag || row.keyword || 'General',
-                            sbu: parseList(row.sbu_tagging || row.sbu || ''),
-                            competitors: parseList(row.competitor || ''),
-                            summary: row.kec_business_summary || ''
-                        };
+                        return { title: row.newstitle || 'Untitled', date: row.publishedate || new Date().toISOString(), source: row.source || 'Unknown Source', link: row.link || '#', category: row.category_tag || 'General', sbu: parseList(row.sbu_tagging || row.sbu || ''), competitors: normalizeArticleCompetitors(parseList(row.competitor || '')), summary: row.kec_business_summary || '' };
                     });
-                    appData.execSummary = appData.allArticles.slice(0, 20);
-                    updateStatusBadge(appData.allArticles.length + ' articles loaded', 'success');
+                    appData.currentPage = 1;
                     switchTab('executive');
-                } else { throw new Error('Invalid API response format'); }
+                } else { throw new Error('Invalid API response'); }
                 appData.isLoading = false;
             } catch (error) {
-                console.error('Error loading data from API:', error);
                 appData.isLoading = false;
-                updateStatusBadge('Failed to load data', 'error');
-                document.getElementById('contentArea').innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#9888;&#65039;</div><h3>Failed to Load Data</h3><p>Could not connect to the API. Please try refreshing the page.</p><p style="color:var(--text-secondary);font-size:14px;margin-top:16px;">Error: ' + error.message + '</p><button class="retry-btn" onclick="loadDataFromAPI()" style="margin-top:20px;">Retry</button></div>';
+                document.getElementById('contentArea').innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#9888;&#65039;</div><h3>Failed to Load Data</h3><p>Could not connect to the API.</p><p style="color:var(--text-secondary);font-size:14px;margin-top:16px;">Error: ' + error.message + '</p><button class="retry-btn" onclick="loadDataFromAPI()" style="margin-top:20px;">Retry</button></div>';
             }
         }
-
-        function updateStatusBadge(text, status) {
-            var badge = document.getElementById('statusBadge');
-            var st = document.getElementById('statusText');
-            badge.style.display = 'inline-flex';
-            st.textContent = text;
-            badge.className = 'status-badge ' + status;
+        function parseList(str) { if (!str) return []; return str.toString().split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; }); }
+        function changePageSize() { appData.pageSize = parseInt(document.getElementById('pageSizeSelect').value); appData.currentPage = 1; switchTab(appData.currentTab); }
+        function goToPage(page) { appData.currentPage = page; switchTab(appData.currentTab); window.scrollTo({ top: 200, behavior: 'smooth' }); }
+        function paginateArticles(articles) { var start = (appData.currentPage - 1) * appData.pageSize; return articles.slice(start, start + appData.pageSize); }
+        function renderPagination(totalArticles) {
+            var totalPages = Math.ceil(totalArticles / appData.pageSize);
+            if (totalPages <= 1) return '';
+            var html = '<div class="pagination-container"><span class="page-info">Page ' + appData.currentPage + ' of ' + totalPages + ' (' + totalArticles + ' articles)</span>';
+            html += '<button class="page-btn" onclick="goToPage(1)" ' + (appData.currentPage === 1 ? 'disabled' : '') + '>&laquo;</button>';
+            html += '<button class="page-btn" onclick="goToPage(' + (appData.currentPage - 1) + ')" ' + (appData.currentPage === 1 ? 'disabled' : '') + '>&lsaquo;</button>';
+            var startP = Math.max(1, appData.currentPage - 2), endP = Math.min(totalPages, appData.currentPage + 2);
+            for (var i = startP; i <= endP; i++) html += '<button class="page-btn' + (i === appData.currentPage ? ' active' : '') + '" onclick="goToPage(' + i + ')">' + i + '</button>';
+            html += '<button class="page-btn" onclick="goToPage(' + (appData.currentPage + 1) + ')" ' + (appData.currentPage === totalPages ? 'disabled' : '') + '>&rsaquo;</button>';
+            html += '<button class="page-btn" onclick="goToPage(' + totalPages + ')" ' + (appData.currentPage === totalPages ? 'disabled' : '') + '>&raquo;</button></div>';
+            return html;
         }
-
-        function parseList(str) {
-            if (!str) return [];
-            return str.toString().split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
-        }
-
         function switchTab(tabName) {
             appData.currentTab = tabName;
-            document.querySelectorAll('.tab-btn').forEach(function(btn) { btn.classList.remove('active'); });
-            if (event && event.target && event.target.classList) event.target.classList.add('active');
-            var contentArea = document.getElementById('contentArea');
-            if (appData.allArticles.length === 0) { contentArea.innerHTML = renderEmptyState(); return; }
-            if (tabName === 'executive') contentArea.innerHTML = renderExecutiveSummary();
-            else if (tabName === 'competitor') { contentArea.innerHTML = renderCompetitorView(); setupFilterHandlers(); }
-            else if (tabName === 'industry') contentArea.innerHTML = renderIndustryView();
+            var btns = document.querySelectorAll('.tab-btn');
+            btns.forEach(function(btn) { btn.classList.remove('active'); });
+            btns.forEach(function(btn) {
+                if (tabName === 'executive' && btn.textContent.indexOf('Executive') !== -1) btn.classList.add('active');
+                if (tabName === 'competitor' && btn.textContent.indexOf('Competitor') !== -1) btn.classList.add('active');
+                if (tabName === 'industry' && btn.textContent.indexOf('Industry') !== -1) btn.classList.add('active');
+            });
+            var c = document.getElementById('contentArea');
+            if (appData.allArticles.length === 0) { c.innerHTML = renderEmptyState(); return; }
+            if (tabName === 'executive') c.innerHTML = renderExecutiveSummary();
+            else if (tabName === 'competitor') { c.innerHTML = renderCompetitorView(); setupFilterHandlers(); }
+            else if (tabName === 'industry') c.innerHTML = renderIndustryView();
         }
-
         function renderExecutiveSummary() {
-            var articles = appData.execSummary.length > 0 ? appData.execSummary : appData.allArticles.slice(0, 20);
-            var grouped = groupByCategory(articles);
-            var html = '<div class="articles-container">';
-            for (var category in grouped) {
-                html += '<div class="category-header">' + category.toUpperCase() + '</div>';
-                grouped[category].forEach(function(article) { html += renderArticleCard(article); });
-            }
-            html += '</div>';
+            var grouped = groupByCategory(appData.allArticles);
+            var allFlat = []; for (var cat in grouped) grouped[cat].forEach(function(a) { a._cat = cat; allFlat.push(a); });
+            var paginated = paginateArticles(allFlat);
+            var html = '<div class="articles-container">', currentCat = '';
+            paginated.forEach(function(article) { if (article._cat !== currentCat) { currentCat = article._cat; html += '<div class="category-header">' + currentCat.toUpperCase() + '</div>'; } html += renderArticleCard(article); });
+            html += '</div>' + renderPagination(allFlat.length);
             return html;
         }
-
         function renderCompetitorView() {
-            var allSBUs = new Set(), allCompetitors = new Set(), allCategories = new Set();
-            appData.allArticles.forEach(function(article) {
-                article.sbu.forEach(function(s) { allSBUs.add(s); });
-                article.competitors.forEach(function(c) { allCompetitors.add(c); });
-                allCategories.add(article.category);
-            });
-            return '<div class="two-column"><aside class="filter-panel"><h3 class="filter-title">Filters</h3><div class="filter-group"><label>Business Unit</label><select class="filter-select" id="sbuFilter"><option value="All">All SBUs</option>' + Array.from(allSBUs).sort().map(function(sbu) { return '<option value="' + sbu + '">' + sbu + '</option>'; }).join('') + '</select></div><div class="filter-group"><label>Competitor</label><select class="filter-select" id="competitorFilter"><option value="All">All Competitors</option>' + Array.from(allCompetitors).sort().map(function(comp) { return '<option value="' + comp + '">' + comp + '</option>'; }).join('') + '</select></div><div class="filter-group"><label>Category</label><select class="filter-select" id="categoryFilter"><option value="All">All Categories</option>' + Array.from(allCategories).sort().map(function(cat) { return '<option value="' + cat + '">' + cat + '</option>'; }).join('') + '</select></div><div class="filter-buttons"><button class="filter-btn primary" onclick="applyFilters()">Apply</button><button class="filter-btn" onclick="clearFilters()">Clear</button></div></aside><div id="filteredArticles" class="articles-container">' + renderFilteredArticles() + '</div></div>';
+            var allSBUs = new Set(), allCategories = new Set();
+            var uniqueCompetitors = extractUniqueCompetitors(appData.allArticles);
+            appData.allArticles.forEach(function(a) { a.sbu.forEach(function(s) { allSBUs.add(s); }); allCategories.add(a.category); });
+            return '<div class="two-column"><aside class="filter-panel"><h3 class="filter-title">Filters</h3>' +
+                '<div class="filter-group"><label>Period</label><select class="filter-select" id="periodFilter"><option value="All">All Time</option><option value="7">Last 7 Days</option><option value="15">Last 15 Days</option><option value="30">Last Month</option><option value="90">3 Months</option><option value="180">6 Months</option></select></div>' +
+                '<div class="filter-group"><label>Business Unit</label><select class="filter-select" id="sbuFilter"><option value="All">All SBUs</option>' + Array.from(allSBUs).sort().map(function(s) { return '<option value="' + s + '">' + s + '</option>'; }).join('') + '</select></div>' +
+                '<div class="filter-group"><label>Competitor</label><select class="filter-select" id="competitorFilter"><option value="All">All Competitors</option>' + uniqueCompetitors.map(function(c) { return '<option value="' + c + '">' + c + '</option>'; }).join('') + '</select></div>' +
+                '<div class="filter-group"><label>Category</label><select class="filter-select" id="categoryFilter"><option value="All">All Categories</option>' + Array.from(allCategories).sort().map(function(c) { return '<option value="' + c + '">' + c + '</option>'; }).join('') + '</select></div>' +
+                '<div class="filter-buttons"><button class="filter-btn primary" onclick="applyFilters()">Apply</button><button class="filter-btn" onclick="clearFilters()">Clear</button></div></aside>' +
+                '<div id="filteredArticles">' + renderFilteredArticles() + '</div></div>';
         }
-
         function renderIndustryView() {
-            var sbuOrder = ['Intl T&D', 'India T&D', 'Transportation', 'Civil', 'Renewables', 'Oil & Gas', 'General'];
-            var html = '<div class="articles-container">';
+            var sbuOrder = ['Intl T&D', 'India T&D', 'International T&D', 'Transportation', 'Civil', 'Renewables', 'Oil & Gas', 'General'];
             var grouped = {};
-            appData.allArticles.forEach(function(article) {
-                var primarySBU = article.sbu[0] || 'General';
-                if (!grouped[primarySBU]) grouped[primarySBU] = [];
-                grouped[primarySBU].push(article);
-            });
-            sbuOrder.forEach(function(sbu) {
-                if (grouped[sbu]) {
-                    html += '<div class="category-header">' + sbu.toUpperCase() + '</div>';
-                    grouped[sbu].forEach(function(article) { html += renderArticleCard(article); });
-                }
-            });
-            Object.keys(grouped).forEach(function(sbu) {
-                if (sbuOrder.indexOf(sbu) === -1) {
-                    html += '<div class="category-header">' + sbu.toUpperCase() + '</div>';
-                    grouped[sbu].forEach(function(article) { html += renderArticleCard(article); });
-                }
-            });
-            html += '</div>';
+            appData.allArticles.forEach(function(a) { var p = a.sbu[0] || 'General'; if (!grouped[p]) grouped[p] = []; grouped[p].push(a); });
+            var allFlat = [];
+            sbuOrder.forEach(function(s) { if (grouped[s]) grouped[s].forEach(function(a) { a._sbuGroup = s; allFlat.push(a); }); });
+            Object.keys(grouped).forEach(function(s) { if (sbuOrder.indexOf(s) === -1) grouped[s].forEach(function(a) { a._sbuGroup = s; allFlat.push(a); }); });
+            var paginated = paginateArticles(allFlat);
+            var html = '<div class="articles-container">', currentSBU = '';
+            paginated.forEach(function(a) { if (a._sbuGroup !== currentSBU) { currentSBU = a._sbuGroup; html += '<div class="category-header">' + currentSBU.toUpperCase() + '</div>'; } html += renderArticleCard(a); });
+            html += '</div>' + renderPagination(allFlat.length);
             return html;
         }
-
         function renderArticleCard(article) {
-            var dateObj = new Date(article.date);
-            var formattedDate = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            var d = new Date(article.date);
+            var fd = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            var sumHtml = article.summary ? '<div class="article-summary">' + article.summary + '</div>' : '';
             return '<div class="article-card" onclick="window.open(\'' + article.link + '\', \'_blank\')">' +
                 '<div class="article-header"><h3 class="article-title">' + article.title + '</h3></div>' +
-                '<div class="article-meta">' +
-                '<span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' + formattedDate + '</span>' +
-                '<span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>' + article.source + '</span></div>' +
-                '<div class="article-tags">' +
-                article.sbu.map(function(s) { return '<span class="tag">' + s + '</span>'; }).join('') +
-                article.competitors.map(function(c) { return '<span class="tag competitor">' + c + '</span>'; }).join('') +
-                '</div></div>';
+                '<div class="article-meta"><span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' + fd + '</span>' +
+                '<span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>' + (article.source || '') + '</span></div>' +
+                sumHtml +
+                '<div class="article-tags">' + article.sbu.map(function(s) { return '<span class="tag">' + s + '</span>'; }).join('') + article.competitors.map(function(c) { return '<span class="tag competitor">' + c + '</span>'; }).join('') + '</div></div>';
         }
-
-        function renderFilteredArticles() {
+        function getFilteredArticles() {
             var filtered = appData.allArticles;
+            if (appData.filters.period !== 'All') { var cutoff = getDateCutoff(appData.filters.period); if (cutoff) filtered = filtered.filter(function(a) { return new Date(a.date) >= cutoff; }); }
             if (appData.filters.sbu !== 'All') filtered = filtered.filter(function(a) { return a.sbu.indexOf(appData.filters.sbu) !== -1; });
             if (appData.filters.competitor !== 'All') filtered = filtered.filter(function(a) { return a.competitors.indexOf(appData.filters.competitor) !== -1; });
             if (appData.filters.category !== 'All') filtered = filtered.filter(function(a) { return a.category === appData.filters.category; });
+            return filtered;
+        }
+        function renderFilteredArticles() {
+            var filtered = getFilteredArticles();
             if (filtered.length === 0) return '<div class="empty-state"><div class="empty-state-icon">&#128269;</div><h3>No Articles Found</h3><p>Try adjusting your filter criteria</p></div>';
-            return filtered.slice(0, 50).map(function(article) { return renderArticleCard(article); }).join('');
+            var paginated = paginateArticles(filtered);
+            return '<div class="articles-container">' + paginated.map(function(a) { return renderArticleCard(a); }).join('') + '</div>' + renderPagination(filtered.length);
         }
-
         function setupFilterHandlers() {
-            var s = document.getElementById('sbuFilter'), c = document.getElementById('competitorFilter'), cat = document.getElementById('categoryFilter');
-            if (s) s.value = appData.filters.sbu;
-            if (c) c.value = appData.filters.competitor;
-            if (cat) cat.value = appData.filters.category;
+            var p = document.getElementById('periodFilter'), s = document.getElementById('sbuFilter'), c = document.getElementById('competitorFilter'), cat = document.getElementById('categoryFilter');
+            if (p) p.value = appData.filters.period; if (s) s.value = appData.filters.sbu; if (c) c.value = appData.filters.competitor; if (cat) cat.value = appData.filters.category;
         }
-
         function applyFilters() {
+            appData.filters.period = document.getElementById('periodFilter').value;
             appData.filters.sbu = document.getElementById('sbuFilter').value;
             appData.filters.competitor = document.getElementById('competitorFilter').value;
             appData.filters.category = document.getElementById('categoryFilter').value;
+            appData.currentPage = 1;
             document.getElementById('filteredArticles').innerHTML = renderFilteredArticles();
         }
-
         function clearFilters() {
-            appData.filters = { sbu: 'All', competitor: 'All', category: 'All' };
+            appData.filters = { sbu: 'All', competitor: 'All', category: 'All', period: 'All' };
+            document.getElementById('periodFilter').value = 'All';
             document.getElementById('sbuFilter').value = 'All';
             document.getElementById('competitorFilter').value = 'All';
             document.getElementById('categoryFilter').value = 'All';
+            appData.currentPage = 1;
             document.getElementById('filteredArticles').innerHTML = renderFilteredArticles();
         }
-
-        function groupByCategory(articles) {
-            var grouped = {};
-            articles.forEach(function(article) {
-                var category = article.category || 'General';
-                if (!grouped[category]) grouped[category] = [];
-                grouped[category].push(article);
-            });
-            return grouped;
-        }
-
-        function renderEmptyState() {
-            return '<div class="empty-state"><div class="empty-state-icon">&#128202;</div><h3>No Data Available</h3><p>The database is currently empty. Data will appear here once your scraping pipeline populates the database.</p><button class="retry-btn" onclick="loadDataFromAPI()" style="margin-top:20px;">Refresh Data</button></div>';
-        }
-
+        function groupByCategory(articles) { var g = {}; articles.forEach(function(a) { var c = a.category || 'General'; if (!g[c]) g[c] = []; g[c].push(a); }); return g; }
+        function renderEmptyState() { return '<div class="empty-state"><div class="empty-state-icon">&#128202;</div><h3>No Data Available</h3><p>The database is currently empty. Data will appear here once your scraping pipeline populates the database.</p><button class="retry-btn" onclick="loadDataFromAPI()" style="margin-top:20px;">Refresh Data</button></div>'; }
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
