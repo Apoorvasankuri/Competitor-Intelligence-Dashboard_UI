@@ -52,11 +52,11 @@
         .kec-logo { height: 50px; width: auto; object-fit: contain; }
         .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--champagne-silt); }
         .toolbar-left { display: flex; align-items: center; gap: 16px; }
-        .toolbar-right { display: flex; align-items: center; gap: 10px; }
         .refresh-btn { background: var(--navy); color: #FFFFFF; border: none; padding: 10px 22px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Montserrat', sans-serif; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; }
         .refresh-btn:hover { background: var(--navy-light); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,43,76,0.2); }
         .refresh-icon { display: inline-block; transition: transform 0.4s ease; }
         .refresh-btn:hover .refresh-icon { transform: rotate(180deg); }
+        .toolbar-right { display: flex; align-items: center; gap: 10px; }
         .page-size-label { font-size: 13px; font-weight: 600; color: var(--text-body); }
         .page-size-select { padding: 8px 12px; background: var(--pure-white); border: 1px solid var(--champagne-silt); border-radius: 6px; color: var(--charcoal); font-size: 13px; font-family: 'Montserrat', sans-serif; cursor: pointer; }
         .page-size-select:focus { outline: none; border-color: var(--navy); }
@@ -65,10 +65,6 @@
         .tab-btn { padding: 12px 28px; background: transparent; border: 2px solid var(--champagne-silt); color: var(--navy); border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 600; font-family: 'Montserrat', sans-serif; transition: all 0.3s ease; letter-spacing: 0.3px; }
         .tab-btn:hover { border-color: var(--navy-light); color: var(--navy-light); }
         .tab-btn.active { background: var(--navy); color: #F9F8F3; border-color: var(--navy); box-shadow: 0 4px 16px rgba(15,43,76,0.2); }
-        .sub-tabs { display: flex; gap: 8px; padding: 20px 0; animation: fadeIn 0.6s ease-out; }
-        .sub-tab-btn { padding: 10px 22px; background: transparent; border: 1px solid var(--champagne-silt); color: var(--text-body); border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; font-family: 'Montserrat', sans-serif; transition: all 0.3s ease; }
-        .sub-tab-btn:hover { border-color: var(--blue-accent); color: var(--blue-accent); }
-        .sub-tab-btn.active { background: var(--blue-pale); color: var(--navy); border-color: var(--blue-accent); font-weight: 600; }
         .content-area { padding: 40px 0; animation: fadeIn 1s ease-out 0.4s backwards; }
         .filter-panel { background: var(--pure-white); border-radius: 8px; padding: 24px; border: 1px solid var(--champagne-silt); position: sticky; top: 140px; max-height: calc(100vh - 200px); overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
         .filter-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-bottom: 24px; color: var(--navy); }
@@ -136,9 +132,7 @@
                     </div>
                 </div>
                 <div class="header-right">
-                    <svg class="kec-logo" viewBox="0 0 87 50" xmlns="http://www.w3.org/2000/svg">
-                        <text x="0" y="35" font-family="Montserrat, sans-serif" font-size="32" font-weight="700" fill="#C9A84C">KEC</text>
-                    </svg>
+                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAAyAFcDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwDQ+MHxn+I+gfE7xBouk6+lvY2d35cEZsoX2rsU4yVJPJPWum/Zl+KPjnxn8QrjSfEesJeWaabJOsYtYo8OHjAOVUHoxrxj9oD/JLT4r/6//tNK2v2adbj8NeJvEmvyFQNP8N3U4z3YPFtH4tgfjXrSpR9jdLWxF9TpfhV8dvHVl8R9c0/w1rUVrpVnc22hT7JFJkoeOVUE7VUcf7VfJUskksrzTuWldm8jHuxOSfzJr7g/Zy8Nnw58EbESxlLrUopNQnBHOZBlB+CBBXy38JfDKeLfG1tpEs5txFDJdTSKuSERc4HucgfjXLTrKE3K+yJsYFFeyfGT4P2ng3QYdc0DU7m+s/OSC5W6RVeNmBKkbRgjIIx7V4zWsJqavEbVgrW8I+ILzwn4isdf09I3ubGXzYllBKMcEYIBGRzWTRVNX0EfWPhP46eLdZ8Q2GkwaZpSyXU4jUsjkDP4163+0H8ZY/h8kWjaLBDea/cxeZiXJitYzwHcDlmODhcjpk8YzwHwi8O+G7z4Z6Vrlx4e0e6v5rTzZbm4sIpJHbcckswJJzX5/wDxm/5K54u/7DFx/wChmunDUpVKnNLZGU2kz7F+B/xr0j4hTf2ZeQR6XrkSF2ty5aO4UdWiJ5yOu08+hNfQdfkNoWs6l4f1e01jSbp7W+tJBLBMn3kYdDX6qeENYk17wjpGtTwJBLf2UN08SHIRZEDAZ9cGscTR9m7roVGVzYooorlKCiiigDzn4z/EKP4c+CZtaWBJ72WRbayicfI0rA8t3wACceuB3r83dQ1DUNb1S41PU7u4v764cu8szl3dj6k19Sft4a0yQeG/D8bfKzS30y+uMIh/9CrxT9nbw+Ne+L2hwyRhrawlOo3JI42xfMAfrIUH40YKKhBylu9hTd3Y+iPgB8JdB8G+G7HXr+xhuPEN3brcGWZA5tQ4DLGgPCkAgse+cdAKK96or0ZTcndkJWCiiipGBJzQvWiigABOetLRRTAKKKKAPk/9u3w/wCVrXh3xREn+vheyuGHqjb0/RnrH/Y78OjVvihe6zLGGi0exZ0J7Sy/IuPwEn5UUV6jf8As/zM+p9pUUUVxFhRRRQB/9k=" alt="KEC International" class="kec-logo">
                 </div>
             </div>
         </header>
@@ -158,24 +152,14 @@
         </div>
         <nav class="nav-tabs" id="navTabs">
             <button class="tab-btn active" onclick="switchTab('executive')">Executive Summary</button>
-            <button class="tab-btn" onclick="switchTab('competitor')">Competitor & SBU</button>
+            <button class="tab-btn" onclick="switchTab('competitor')">Competitor &amp; SBU</button>
             <button class="tab-btn" onclick="switchTab('industry')">Industry</button>
         </nav>
-        <div id="subTabsContainer"></div>
         <main class="content-area" id="contentArea"></main>
     </div>
     <script>
         var API_BASE_URL = 'https://competitor-intelligence-dashboard.onrender.com';
-        var appData = { 
-            allArticles: [], 
-            currentTab: 'executive', 
-            currentSubTab: 'all',
-            filters: { sbu: 'All', competitor: 'All', category: 'All', period: 'All' }, 
-            isLoading: false, 
-            currentPage: 1, 
-            pageSize: 20 
-        };
-        
+        var appData = { allArticles: [], currentTab: 'executive', filters: { sbu: 'All', competitor: 'All', category: 'All', period: 'All' }, isLoading: false, currentPage: 1, pageSize: 20 };
         var COMPETITOR_ALIAS_MAP = {
             'larsen & toubro': 'L&T', 'larsen and toubro': 'L&T', 'l&t ltd': 'L&T', 'l&t limited': 'L&T', 'l&t construction': 'L&T', 'l&t power': 'L&T', 'l&t metro': 'L&T', 'l&t': 'L&T',
             'tata projects ltd': 'Tata Projects', 'tata projects limited': 'Tata Projects', 'tata projects': 'Tata Projects',
@@ -200,7 +184,6 @@
             'techno electric': 'Techno Electric', 'cg power': 'CG Power', 'crompton greaves': 'CG Power',
             'ge t&d': 'GE T&D', 'ge vernova': 'GE T&D'
         };
-
         function normalizeCompetitor(name) {
             if (!name) return null;
             var trimmed = name.trim();
@@ -209,30 +192,19 @@
             if (COMPETITOR_ALIAS_MAP[lower]) return COMPETITOR_ALIAS_MAP[lower];
             return trimmed;
         }
-
         function extractUniqueCompetitors(articles) {
             var set = new Set();
-            articles.forEach(function(a) { 
-                a.competitors.forEach(function(c) { 
-                    if (c) set.add(c); 
-                }); 
-            });
+            articles.forEach(function(a) { a.competitors.forEach(function(c) { if (c) set.add(c); }); });
             return Array.from(set).sort();
         }
-
         function normalizeArticleCompetitors(rawList) {
             var result = [];
-            rawList.forEach(function(c) { 
-                var norm = normalizeCompetitor(c); 
-                if (norm && result.indexOf(norm) === -1) result.push(norm); 
-            });
+            rawList.forEach(function(c) { var norm = normalizeCompetitor(c); if (norm && result.indexOf(norm) === -1) result.push(norm); });
             return result;
         }
-
         function getDateCutoff(period) {
             if (period === 'All') return null;
-            var now = new Date(); 
-            var cutoff = new Date();
+            var now = new Date(); var cutoff = new Date();
             if (period === '7') cutoff.setDate(now.getDate() - 7);
             else if (period === '15') cutoff.setDate(now.getDate() - 15);
             else if (period === '30') cutoff.setDate(now.getDate() - 30);
@@ -240,115 +212,44 @@
             else if (period === '180') cutoff.setDate(now.getDate() - 180);
             return cutoff;
         }
-
-        function initApp() { 
-            loadDataFromAPI(); 
-        }
-
+        function initApp() { loadDataFromAPI(); }
         async function loadDataFromAPI() {
             try {
                 appData.isLoading = true;
                 var response = await fetch(API_BASE_URL + '/api/data');
                 if (!response.ok) throw new Error('API Error: ' + response.status);
                 var result = await response.json();
-                
                 if (result.status === 'success' && result.data) {
                     appData.allArticles = result.data.map(function(row) {
-                        // Clean title by removing source suffix if present
-                        var cleanTitle = row.newstitle || 'Untitled';
-                        var source = row.source || 'Unknown Source';
-                        
-                        // Remove " - Source" or " | Source" patterns from end of title
-                        if (source !== 'Unknown Source') {
-                            var patterns = [
-                                ' - ' + source,
-                                ' | ' + source,
-                                ' – ' + source,
-                                '- ' + source,
-                                '| ' + source
-                            ];
-                            patterns.forEach(function(pattern) {
-                                if (cleanTitle.endsWith(pattern)) {
-                                    cleanTitle = cleanTitle.substring(0, cleanTitle.length - pattern.length).trim();
-                                }
-                            });
-                        }
-                        
-                        return { 
-                            title: cleanTitle, 
-                            date: row.publishedate || new Date().toISOString(), 
-                            source: source, 
-                            link: row.link || '#', 
-                            category: row.category_tag || 'General', 
-                            sbu: parseList(row.sbu_tagging || ''), 
-                            competitors: normalizeArticleCompetitors(parseList(row.competitor_tagging || '')), 
-                            summary: row.kec_business_summary || '' 
-                        };
+                        return { title: row.newstitle || 'Untitled', date: row.publishedate || new Date().toISOString(), source: row.source || 'Unknown Source', link: row.link || '#', category: row.category_tag || 'General', sbu: parseList(row.sbu_tagging || row.sbu || ''), competitors: normalizeArticleCompetitors(parseList(row.competitor || '')), summary: row.kec_business_summary || '' };
                     });
-                    
                     appData.currentPage = 1;
                     switchTab('executive');
-                } else { 
-                    throw new Error('Invalid API response'); 
-                }
+                } else { throw new Error('Invalid API response'); }
                 appData.isLoading = false;
             } catch (error) {
                 appData.isLoading = false;
                 document.getElementById('contentArea').innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#9888;&#65039;</div><h3>Failed to Load Data</h3><p>Could not connect to the API.</p><p style="color:var(--text-secondary);font-size:14px;margin-top:16px;">Error: ' + error.message + '</p><button class="retry-btn" onclick="loadDataFromAPI()" style="margin-top:20px;">Retry</button></div>';
             }
         }
-
-        function parseList(str) { 
-            if (!str) return []; 
-            return str.toString().split(',').map(function(s) { 
-                return s.trim(); 
-            }).filter(function(s) { 
-                return s; 
-            }); 
-        }
-
-        function changePageSize() { 
-            appData.pageSize = parseInt(document.getElementById('pageSizeSelect').value); 
-            appData.currentPage = 1; 
-            switchTab(appData.currentTab); 
-        }
-
-        function goToPage(page) { 
-            appData.currentPage = page; 
-            renderCurrentView();
-            window.scrollTo({ top: 200, behavior: 'smooth' }); 
-        }
-
-        function paginateArticles(articles) { 
-            var start = (appData.currentPage - 1) * appData.pageSize; 
-            return articles.slice(start, start + appData.pageSize); 
-        }
-
+        function parseList(str) { if (!str) return []; return str.toString().split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; }); }
+        function changePageSize() { appData.pageSize = parseInt(document.getElementById('pageSizeSelect').value); appData.currentPage = 1; switchTab(appData.currentTab); }
+        function goToPage(page) { appData.currentPage = page; switchTab(appData.currentTab); window.scrollTo({ top: 200, behavior: 'smooth' }); }
+        function paginateArticles(articles) { var start = (appData.currentPage - 1) * appData.pageSize; return articles.slice(start, start + appData.pageSize); }
         function renderPagination(totalArticles) {
             var totalPages = Math.ceil(totalArticles / appData.pageSize);
             if (totalPages <= 1) return '';
-            
             var html = '<div class="pagination-container"><span class="page-info">Page ' + appData.currentPage + ' of ' + totalPages + ' (' + totalArticles + ' articles)</span>';
             html += '<button class="page-btn" onclick="goToPage(1)" ' + (appData.currentPage === 1 ? 'disabled' : '') + '>&laquo;</button>';
             html += '<button class="page-btn" onclick="goToPage(' + (appData.currentPage - 1) + ')" ' + (appData.currentPage === 1 ? 'disabled' : '') + '>&lsaquo;</button>';
-            
-            var startP = Math.max(1, appData.currentPage - 2);
-            var endP = Math.min(totalPages, appData.currentPage + 2);
-            
-            for (var i = startP; i <= endP; i++) {
-                html += '<button class="page-btn' + (i === appData.currentPage ? ' active' : '') + '" onclick="goToPage(' + i + ')">' + i + '</button>';
-            }
-            
+            var startP = Math.max(1, appData.currentPage - 2), endP = Math.min(totalPages, appData.currentPage + 2);
+            for (var i = startP; i <= endP; i++) html += '<button class="page-btn' + (i === appData.currentPage ? ' active' : '') + '" onclick="goToPage(' + i + ')">' + i + '</button>';
             html += '<button class="page-btn" onclick="goToPage(' + (appData.currentPage + 1) + ')" ' + (appData.currentPage === totalPages ? 'disabled' : '') + '>&rsaquo;</button>';
             html += '<button class="page-btn" onclick="goToPage(' + totalPages + ')" ' + (appData.currentPage === totalPages ? 'disabled' : '') + '>&raquo;</button></div>';
             return html;
         }
-
         function switchTab(tabName) {
             appData.currentTab = tabName;
-            appData.currentSubTab = 'all';
-            appData.currentPage = 1;
-            
             var btns = document.querySelectorAll('.tab-btn');
             btns.forEach(function(btn) { btn.classList.remove('active'); });
             btns.forEach(function(btn) {
@@ -356,255 +257,94 @@
                 if (tabName === 'competitor' && btn.textContent.indexOf('Competitor') !== -1) btn.classList.add('active');
                 if (tabName === 'industry' && btn.textContent.indexOf('Industry') !== -1) btn.classList.add('active');
             });
-            
-            renderSubTabs();
-            renderCurrentView();
-        }
-
-        function switchSubTab(subTab) {
-            appData.currentSubTab = subTab;
-            appData.currentPage = 1;
-            
-            var btns = document.querySelectorAll('.sub-tab-btn');
-            btns.forEach(function(btn) { btn.classList.remove('active'); });
-            btns.forEach(function(btn) {
-                if (btn.getAttribute('data-subtab') === subTab) btn.classList.add('active');
-            });
-            
-            renderCurrentView();
-        }
-
-        function renderSubTabs() {
-            var container = document.getElementById('subTabsContainer');
-            if (appData.currentTab === 'executive') {
-                container.innerHTML = '';
-                return;
-            }
-            
-            var html = '<div class="sub-tabs">';
-            html += '<button class="sub-tab-btn active" data-subtab="all" onclick="switchSubTab(\'all\')">All</button>';
-            html += '<button class="sub-tab-btn" data-subtab="competitor" onclick="switchSubTab(\'competitor\')">By Competitor</button>';
-            html += '<button class="sub-tab-btn" data-subtab="sbu" onclick="switchSubTab(\'sbu\')">By SBU</button>';
-            html += '<button class="sub-tab-btn" data-subtab="category" onclick="switchSubTab(\'category\')">By Category</button>';
-            html += '</div>';
-            
-            container.innerHTML = html;
-        }
-
-        function renderCurrentView() {
             var c = document.getElementById('contentArea');
-            
-            if (appData.allArticles.length === 0) { 
-                c.innerHTML = renderEmptyState(); 
-                return; 
-            }
-            
-            if (appData.currentTab === 'executive') {
-                c.innerHTML = renderExecutiveSummary();
-            } else if (appData.currentTab === 'competitor') {
-                c.innerHTML = renderCompetitorView();
-            } else if (appData.currentTab === 'industry') {
-                c.innerHTML = renderIndustryView();
-            }
+            if (appData.allArticles.length === 0) { c.innerHTML = renderEmptyState(); return; }
+            if (tabName === 'executive') c.innerHTML = renderExecutiveSummary();
+            else if (tabName === 'competitor') { c.innerHTML = renderCompetitorView(); setupFilterHandlers(); }
+            else if (tabName === 'industry') c.innerHTML = renderIndustryView();
         }
-
         function renderExecutiveSummary() {
             var grouped = groupByCategory(appData.allArticles);
-            var allFlat = []; 
-            for (var cat in grouped) {
-                grouped[cat].forEach(function(a) { 
-                    a._cat = cat; 
-                    allFlat.push(a); 
-                });
-            }
-            
+            var allFlat = []; for (var cat in grouped) grouped[cat].forEach(function(a) { a._cat = cat; allFlat.push(a); });
             var paginated = paginateArticles(allFlat);
-            var html = '<div class="articles-container">';
-            var currentCat = '';
-            
-            paginated.forEach(function(article) { 
-                if (article._cat !== currentCat) { 
-                    currentCat = article._cat; 
-                    html += '<div class="category-header">' + currentCat.toUpperCase() + '</div>'; 
-                } 
-                html += renderArticleCard(article); 
-            });
-            
+            var html = '<div class="articles-container">', currentCat = '';
+            paginated.forEach(function(article) { if (article._cat !== currentCat) { currentCat = article._cat; html += '<div class="category-header">' + currentCat.toUpperCase() + '</div>'; } html += renderArticleCard(article); });
             html += '</div>' + renderPagination(allFlat.length);
             return html;
         }
-
         function renderCompetitorView() {
-            if (appData.currentSubTab === 'all') {
-                return renderAllArticles();
-            } else if (appData.currentSubTab === 'competitor') {
-                return renderGroupedByCompetitor();
-            } else if (appData.currentSubTab === 'sbu') {
-                return renderGroupedBySBU();
-            } else if (appData.currentSubTab === 'category') {
-                return renderGroupedByCategory();
-            }
+            var allSBUs = new Set(), allCategories = new Set();
+            var uniqueCompetitors = extractUniqueCompetitors(appData.allArticles);
+            appData.allArticles.forEach(function(a) { a.sbu.forEach(function(s) { allSBUs.add(s); }); allCategories.add(a.category); });
+            return '<div class="two-column"><aside class="filter-panel"><h3 class="filter-title">Filters</h3>' +
+                '<div class="filter-group"><label>Period</label><select class="filter-select" id="periodFilter"><option value="All">All Time</option><option value="7">Last 7 Days</option><option value="15">Last 15 Days</option><option value="30">Last Month</option><option value="90">3 Months</option><option value="180">6 Months</option></select></div>' +
+                '<div class="filter-group"><label>Business Unit</label><select class="filter-select" id="sbuFilter"><option value="All">All SBUs</option>' + Array.from(allSBUs).sort().map(function(s) { return '<option value="' + s + '">' + s + '</option>'; }).join('') + '</select></div>' +
+                '<div class="filter-group"><label>Competitor</label><select class="filter-select" id="competitorFilter"><option value="All">All Competitors</option>' + uniqueCompetitors.map(function(c) { return '<option value="' + c + '">' + c + '</option>'; }).join('') + '</select></div>' +
+                '<div class="filter-group"><label>Category</label><select class="filter-select" id="categoryFilter"><option value="All">All Categories</option>' + Array.from(allCategories).sort().map(function(c) { return '<option value="' + c + '">' + c + '</option>'; }).join('') + '</select></div>' +
+                '<div class="filter-buttons"><button class="filter-btn primary" onclick="applyFilters()">Apply</button><button class="filter-btn" onclick="clearFilters()">Clear</button></div></aside>' +
+                '<div id="filteredArticles">' + renderFilteredArticles() + '</div></div>';
         }
-
         function renderIndustryView() {
-            if (appData.currentSubTab === 'all') {
-                return renderAllArticles();
-            } else if (appData.currentSubTab === 'competitor') {
-                return renderGroupedByCompetitor();
-            } else if (appData.currentSubTab === 'sbu') {
-                return renderGroupedBySBU();
-            } else if (appData.currentSubTab === 'category') {
-                return renderGroupedByCategory();
-            }
-        }
-
-        function renderAllArticles() {
-            var paginated = paginateArticles(appData.allArticles);
-            var html = '<div class="articles-container">';
-            paginated.forEach(function(a) { 
-                html += renderArticleCard(a); 
-            });
-            html += '</div>' + renderPagination(appData.allArticles.length);
-            return html;
-        }
-
-        function renderGroupedByCompetitor() {
+            var sbuOrder = ['Intl T&D', 'India T&D', 'International T&D', 'Transportation', 'Civil', 'Renewables', 'Oil & Gas', 'General'];
             var grouped = {};
-            appData.allArticles.forEach(function(a) {
-                a.competitors.forEach(function(comp) {
-                    if (!grouped[comp]) grouped[comp] = [];
-                    grouped[comp].push(a);
-                });
-            });
-            
+            appData.allArticles.forEach(function(a) { var p = a.sbu[0] || 'General'; if (!grouped[p]) grouped[p] = []; grouped[p].push(a); });
             var allFlat = [];
-            var sortedCompetitors = Object.keys(grouped).sort();
-            sortedCompetitors.forEach(function(comp) {
-                grouped[comp].forEach(function(a) {
-                    a._groupHeader = comp;
-                    allFlat.push(a);
-                });
-            });
-            
+            sbuOrder.forEach(function(s) { if (grouped[s]) grouped[s].forEach(function(a) { a._sbuGroup = s; allFlat.push(a); }); });
+            Object.keys(grouped).forEach(function(s) { if (sbuOrder.indexOf(s) === -1) grouped[s].forEach(function(a) { a._sbuGroup = s; allFlat.push(a); }); });
             var paginated = paginateArticles(allFlat);
-            var html = '<div class="articles-container">';
-            var currentGroup = '';
-            
-            paginated.forEach(function(article) {
-                if (article._groupHeader !== currentGroup) {
-                    currentGroup = article._groupHeader;
-                    html += '<div class="category-header">' + currentGroup + '</div>';
-                }
-                html += renderArticleCard(article);
-            });
-            
+            var html = '<div class="articles-container">', currentSBU = '';
+            paginated.forEach(function(a) { if (a._sbuGroup !== currentSBU) { currentSBU = a._sbuGroup; html += '<div class="category-header">' + currentSBU.toUpperCase() + '</div>'; } html += renderArticleCard(a); });
             html += '</div>' + renderPagination(allFlat.length);
             return html;
         }
-
-        function renderGroupedBySBU() {
-            var grouped = {};
-            appData.allArticles.forEach(function(a) {
-                a.sbu.forEach(function(s) {
-                    if (!grouped[s]) grouped[s] = [];
-                    grouped[s].push(a);
-                });
-            });
-            
-            var allFlat = [];
-            var sortedSBUs = Object.keys(grouped).sort();
-            sortedSBUs.forEach(function(sbu) {
-                grouped[sbu].forEach(function(a) {
-                    a._groupHeader = sbu;
-                    allFlat.push(a);
-                });
-            });
-            
-            var paginated = paginateArticles(allFlat);
-            var html = '<div class="articles-container">';
-            var currentGroup = '';
-            
-            paginated.forEach(function(article) {
-                if (article._groupHeader !== currentGroup) {
-                    currentGroup = article._groupHeader;
-                    html += '<div class="category-header">' + currentGroup.toUpperCase() + '</div>';
-                }
-                html += renderArticleCard(article);
-            });
-            
-            html += '</div>' + renderPagination(allFlat.length);
-            return html;
-        }
-
-        function renderGroupedByCategory() {
-            var grouped = groupByCategory(appData.allArticles);
-            var allFlat = [];
-            
-            for (var cat in grouped) {
-                grouped[cat].forEach(function(a) {
-                    a._groupHeader = cat;
-                    allFlat.push(a);
-                });
-            }
-            
-            var paginated = paginateArticles(allFlat);
-            var html = '<div class="articles-container">';
-            var currentGroup = '';
-            
-            paginated.forEach(function(article) {
-                if (article._groupHeader !== currentGroup) {
-                    currentGroup = article._groupHeader;
-                    html += '<div class="category-header">' + currentGroup.toUpperCase() + '</div>';
-                }
-                html += renderArticleCard(article);
-            });
-            
-            html += '</div>' + renderPagination(allFlat.length);
-            return html;
-        }
-
         function renderArticleCard(article) {
             var d = new Date(article.date);
             var fd = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
             var sumHtml = article.summary ? '<div class="article-summary">' + article.summary + '</div>' : '';
-            
             return '<div class="article-card" onclick="window.open(\'' + article.link + '\', \'_blank\')">' +
                 '<div class="article-header"><h3 class="article-title">' + article.title + '</h3></div>' +
-                '<div class="article-meta">' +
-                '<span class="meta-item">' +
-                '<svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">' +
-                '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>' +
-                '<line x1="16" y1="2" x2="16" y2="6"></line>' +
-                '<line x1="8" y1="2" x2="8" y2="6"></line>' +
-                '<line x1="3" y1="10" x2="21" y2="10"></line>' +
-                '</svg>' + fd + '</span>' +
-                '<span class="meta-item">' +
-                '<svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">' +
-                '<path d="M12 2L2 7l10 5 10-5-10-5z"></path>' +
-                '<path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>' +
-                '</svg>' + article.source + '</span>' +
-                '</div>' +
+                '<div class="article-meta"><span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' + fd + '</span>' +
+                '<span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>' + (article.source || '') + '</span></div>' +
                 sumHtml +
-                '<div class="article-tags">' + 
-                article.sbu.map(function(s) { return '<span class="tag">' + s + '</span>'; }).join('') + 
-                article.competitors.map(function(c) { return '<span class="tag competitor">' + c + '</span>'; }).join('') + 
-                '</div></div>';
+                '<div class="article-tags">' + article.sbu.map(function(s) { return '<span class="tag">' + s + '</span>'; }).join('') + article.competitors.map(function(c) { return '<span class="tag competitor">' + c + '</span>'; }).join('') + '</div></div>';
         }
-
-        function groupByCategory(articles) { 
-            var g = {}; 
-            articles.forEach(function(a) { 
-                var c = a.category || 'General'; 
-                if (!g[c]) g[c] = []; 
-                g[c].push(a); 
-            }); 
-            return g; 
+        function getFilteredArticles() {
+            var filtered = appData.allArticles;
+            if (appData.filters.period !== 'All') { var cutoff = getDateCutoff(appData.filters.period); if (cutoff) filtered = filtered.filter(function(a) { return new Date(a.date) >= cutoff; }); }
+            if (appData.filters.sbu !== 'All') filtered = filtered.filter(function(a) { return a.sbu.indexOf(appData.filters.sbu) !== -1; });
+            if (appData.filters.competitor !== 'All') filtered = filtered.filter(function(a) { return a.competitors.indexOf(appData.filters.competitor) !== -1; });
+            if (appData.filters.category !== 'All') filtered = filtered.filter(function(a) { return a.category === appData.filters.category; });
+            return filtered;
         }
-
-        function renderEmptyState() { 
-            return '<div class="empty-state"><div class="empty-state-icon">&#128202;</div><h3>No Data Available</h3><p>The database is currently empty. Data will appear here once your scraping pipeline populates the database.</p><button class="retry-btn" onclick="loadDataFromAPI()" style="margin-top:20px;">Refresh Data</button></div>'; 
+        function renderFilteredArticles() {
+            var filtered = getFilteredArticles();
+            if (filtered.length === 0) return '<div class="empty-state"><div class="empty-state-icon">&#128269;</div><h3>No Articles Found</h3><p>Try adjusting your filter criteria</p></div>';
+            var paginated = paginateArticles(filtered);
+            return '<div class="articles-container">' + paginated.map(function(a) { return renderArticleCard(a); }).join('') + '</div>' + renderPagination(filtered.length);
         }
-
+        function setupFilterHandlers() {
+            var p = document.getElementById('periodFilter'), s = document.getElementById('sbuFilter'), c = document.getElementById('competitorFilter'), cat = document.getElementById('categoryFilter');
+            if (p) p.value = appData.filters.period; if (s) s.value = appData.filters.sbu; if (c) c.value = appData.filters.competitor; if (cat) cat.value = appData.filters.category;
+        }
+        function applyFilters() {
+            appData.filters.period = document.getElementById('periodFilter').value;
+            appData.filters.sbu = document.getElementById('sbuFilter').value;
+            appData.filters.competitor = document.getElementById('competitorFilter').value;
+            appData.filters.category = document.getElementById('categoryFilter').value;
+            appData.currentPage = 1;
+            document.getElementById('filteredArticles').innerHTML = renderFilteredArticles();
+        }
+        function clearFilters() {
+            appData.filters = { sbu: 'All', competitor: 'All', category: 'All', period: 'All' };
+            document.getElementById('periodFilter').value = 'All';
+            document.getElementById('sbuFilter').value = 'All';
+            document.getElementById('competitorFilter').value = 'All';
+            document.getElementById('categoryFilter').value = 'All';
+            appData.currentPage = 1;
+            document.getElementById('filteredArticles').innerHTML = renderFilteredArticles();
+        }
+        function groupByCategory(articles) { var g = {}; articles.forEach(function(a) { var c = a.category || 'General'; if (!g[c]) g[c] = []; g[c].push(a); }); return g; }
+        function renderEmptyState() { return '<div class="empty-state"><div class="empty-state-icon">&#128202;</div><h3>No Data Available</h3><p>The database is currently empty. Data will appear here once your scraping pipeline populates the database.</p><button class="retry-btn" onclick="loadDataFromAPI()" style="margin-top:20px;">Refresh Data</button></div>'; }
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
