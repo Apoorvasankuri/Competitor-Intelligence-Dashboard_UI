@@ -153,9 +153,8 @@
         </div>
         <nav class="nav-tabs" id="navTabs">
             <button class="tab-btn active" onclick="switchTab('executive')">Executive Summary</button>
-            <button class="tab-btn" onclick="switchTab('competitor')">Competitor Intelligence</button>
-            <button class="tab-btn" onclick="switchTab('sbu')">SBU Intelligence</button>
-            <button class="tab-btn" onclick="switchTab('category')">Category Intelligence</button>
+            <button class="tab-btn" onclick="switchTab('competitor')">Competitor &amp; SBU</button>
+            <button class="tab-btn" onclick="switchTab('industry')">Industry</button>
         </nav>
         <main class="content-area" id="contentArea"></main>
     </div>
@@ -223,10 +222,7 @@
                 var result = await response.json();
                 if (result.status === 'success' && result.data) {
                     appData.allArticles = result.data.map(function(row) {
-                        return { title: row.newstitle || 'Untitled', date: row.publishedate || new Date().toISOString(), source: row.Source || 'Unknown Source', link: row.link || '#', category: row.category_tag || 'General', sbu: parseList(row.sbu_tagging || ''), competitors: normalizeArticleCompetitors(parseList(row.competitor_tagging || '')), , // Source: competitor_tagging
-                        summary: row.kec_business_summary || '' 
-                        };
-
+                        return { title: row.newstitle || 'Untitled', date: row.publishedate || new Date().toISOString(), source: row.source || 'Unknown Source', link: row.link || '#', category: row.category_tag || 'General', sbu: parseList(row.sbu_tagging || row.sbu || ''), competitors: normalizeArticleCompetitors(parseList(row.competitor || '')), summary: row.kec_business_summary || '' };
                     });
                     appData.currentPage = 1;
                     switchTab('executive');
@@ -256,18 +252,17 @@
         function switchTab(tabName) {
             appData.currentTab = tabName;
             var btns = document.querySelectorAll('.tab-btn');
-            btns.forEach(function(btn) { 
-                btn.classList.remove('active');
-                if (btn.getAttribute('onclick').includes("'" + tabName + "'")) btn.classList.add('active');
+            btns.forEach(function(btn) { btn.classList.remove('active'); });
+            btns.forEach(function(btn) {
+                if (tabName === 'executive' && btn.textContent.indexOf('Executive') !== -1) btn.classList.add('active');
+                if (tabName === 'competitor' && btn.textContent.indexOf('Competitor') !== -1) btn.classList.add('active');
+                if (tabName === 'industry' && btn.textContent.indexOf('Industry') !== -1) btn.classList.add('active');
             });
-
             var c = document.getElementById('contentArea');
             if (appData.allArticles.length === 0) { c.innerHTML = renderEmptyState(); return; }
-
             if (tabName === 'executive') c.innerHTML = renderExecutiveSummary();
             else if (tabName === 'competitor') { c.innerHTML = renderCompetitorView(); setupFilterHandlers(); }
-            else if (tabName === 'sbu') c.innerHTML = renderIndustryView(); // Reuse SBU grouping logic
-            else if (tabName === 'category') c.innerHTML = renderCategoryView();
+            else if (tabName === 'industry') c.innerHTML = renderIndustryView();
         }
         function renderExecutiveSummary() {
             var grouped = groupByCategory(appData.allArticles);
@@ -312,7 +307,7 @@
                 '<div class="article-meta"><span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' + fd + '</span>' +
                 '<span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>' + (article.source || '') + '</span></div>' +
                 sumHtml +
-                '<div class="article-tags">' + article.sbu.map(function(s) { return '<span class="tag">' + s + '</span>'; }).join('') + article.competitors.map(function(c) { return '<span class="tag competitor">' + c + '</span>'; }).join('') '<span class="tag" style="border-color: var(--gold-accent); color: var(--navy); background: transparent;">' + article.category + '</span>' + '</div></div>';
+                '<div class="article-tags">' + article.sbu.map(function(s) { return '<span class="tag">' + s + '</span>'; }).join('') + article.competitors.map(function(c) { return '<span class="tag competitor">' + c + '</span>'; }).join('') + '</div></div>';
         }
         function getFilteredArticles() {
             var filtered = appData.allArticles;
