@@ -50,7 +50,7 @@
         .header-subtitle { font-family: 'Montserrat', sans-serif; font-size: 12px; color: var(--gold-accent); font-weight: 500; letter-spacing: 3px; text-transform: uppercase; margin-top: 6px; }
         .header-right { display: flex; align-items: center; flex: 0 0 auto; }
         .kec-logo { height: 50px; width: auto; object-fit: contain; }
-        .toolbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--champagne-silt); }
+        .toolbar { display: flex; align-items: center; justify-content: flex-end; padding: 16px 0; border-bottom: 1px solid var(--champagne-silt);gap: 20px; }
         .toolbar-left { display: flex; align-items: center; gap: 16px; }
         .refresh-btn { background: var(--navy); color: #FFFFFF; border: none; padding: 10px 22px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Montserrat', sans-serif; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; }
         .refresh-btn:hover { background: var(--navy-light); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,43,76,0.2); }
@@ -137,9 +137,10 @@
             </div>
         </header>
         <div class="toolbar">
-            <div class="toolbar-left">
-                <button class="refresh-btn" onclick="loadDataFromAPI()"><span class="refresh-icon">&#8635;</span> Refresh Data</button>
-            </div>
+            <button class="refresh-btn" onclick="loadDataFromAPI()">
+                <span class="refresh-icon">&#8635;</span> Refresh Data
+            </button>
+    
             <div class="toolbar-right">
                 <span class="page-size-label">Articles per page:</span>
                 <select class="page-size-select" id="pageSizeSelect" onchange="changePageSize()">
