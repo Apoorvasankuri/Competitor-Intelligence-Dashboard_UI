@@ -225,7 +225,36 @@
                 var result = await response.json();
                 if (result.status === 'success' && result.data) {
                     appData.allArticles = result.data.map(function(row) {
-                        return { title: row.newstitle || 'Untitled', date: row.publishedate || new Date().toISOString(), source: row.Source || 'Unknown Source', link: row.link || '#', category: row.category_tag || 'General', sbu: parseList(row.sbu_tagging || row.sbu || ''), competitors: normalizeArticleCompetitors(parseList(row.competitor || '')), summary: row.kec_business_summary || '' };
+                       // Clean title by removing source suffix if present
+                       var cleanTitle = row.newstitle || 'Untitled';
+                       var source = row.Source || 'Unknown Source';
+    
+                       // Remove " - Source" or " | Source" patterns from end of title
+                       if (source !== 'Unknown Source') {
+                           var patterns = [
+                               ' - ' + source,
+                               ' | ' + source,
+                               ' – ' + source,
+                               '- ' + source,
+                               '| ' + source
+                           ];
+                           patterns.forEach(function(pattern) {
+                               if (cleanTitle.endsWith(pattern)) {
+                                   cleanTitle = cleanTitle.substring(0, cleanTitle.length - pattern.length).trim();
+                               }
+                           });
+                       }
+    
+                       return { 
+                           title: cleanTitle, 
+                           date: row.publishedate || new Date().toISOString(), 
+                           source: source, 
+                           link: row.link || '#', 
+                           category: row.category_tag || 'General', 
+                           sbu: parseList(row.sbu_tagging || row.sbu || ''), 
+                           competitors: normalizeArticleCompetitors(parseList(row.competitor_tagging || '')), 
+                           summary: row.kec_business_summary || '' 
+                       };
                     });
                     appData.currentPage = 1;
                     switchTab('executive');
