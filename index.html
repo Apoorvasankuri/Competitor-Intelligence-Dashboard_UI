@@ -336,8 +336,7 @@
             var sumHtml = article.summary ? '<div class="article-summary">' + article.summary + '</div>' : '';
             return '<div class="article-card" onclick="window.open(\'' + article.link + '\', \'_blank\')">' +
                 '<div class="article-header"><h3 class="article-title">' + article.title + '</h3></div>' +
-                '<div class="article-meta"><span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' + fd + '</span>' +
-                '<span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>' + (article.source || '') + '</span></div>' +
+                '<div class="article-meta"><span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' + fd + '</span></div>' +
                 sumHtml +
                 '<div class="article-tags">' + [article.category].filter(c => c).map(function(cat) { return '<span class="tag category-tag">' + cat + '</span>'; }).join('') + article.sbu.map(function(s) { return '<span class="tag">' + s + '</span>'; }).join('') + article.competitors.map(function(c) { return '<span class="tag competitor">' + c + '</span>'; }).join('') + '</div></div>';
         }
