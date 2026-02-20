@@ -80,19 +80,24 @@
         .filter-btn.primary:hover { background: var(--navy-light); border-color: var(--navy-light); }
         .articles-container { display: grid; gap: 24px; }
         .category-header { background: var(--blue-pale); padding: 16px 24px; border-radius: 8px; border-left: 4px solid var(--navy); font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; letter-spacing: 0.5px; color: var(--navy); }
-        .article-card { background: var(--pure-white); border-radius: 8px; padding: 24px; border: 1px solid var(--champagne-silt); transition: all 0.3s ease; cursor: pointer; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+        .article-card { background: var(--pure-white); border-radius: 8px; padding: 24px; border: 1px solid var(--champagne-silt); transition: all 0.3s ease; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
         .article-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--navy); transform: scaleY(0); transition: transform 0.3s ease; }
         .article-card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(15,43,76,0.12); border-color: var(--blue-accent); }
         .article-card:hover::before { transform: scaleY(1); }
         .article-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-        .article-title { font-family: 'Public Sans', sans-serif; font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 12px; line-height: 1.4; }
+        .article-title { font-family: 'Public Sans', sans-serif; font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 12px; line-height: 1.4; cursor: pointer; }
+        .article-title:hover { color: var(--blue-accent); }
         .article-meta { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
         .meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-body); font-weight: 500; }
         .meta-icon { width: 16px; height: 16px; opacity: 0.6; stroke: var(--blue-accent); }
         .article-summary { font-size: 14px; color: var(--text-body); line-height: 1.6; margin-top: 8px; }
         .article-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-        .tag { padding: 6px 14px; background: var(--blue-pale); border: 1px solid var(--blue-border); border-radius: 20px; font-size: 12px; color: var(--blue-accent); font-weight: 600; }
+        .tag { padding: 6px 14px; background: var(--blue-pale); border: 1px solid var(--blue-border); border-radius: 20px; font-size: 12px; color: var(--blue-accent); font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .tag:hover { transform: translateY(-2px); box-shadow: 0 2px 8px rgba(46, 110, 181, 0.2); background: var(--blue-accent); color: white; }
         .tag.competitor { background: rgba(15,43,76,0.08); border-color: rgba(15,43,76,0.2); color: var(--navy); }
+        .tag.competitor:hover { background: var(--navy); color: white; }
+        .tag.category-tag { background: rgba(201, 168, 76, 0.1); border-color: var(--gold-accent); color: #8B7335; }
+        .tag.category-tag:hover { background: var(--gold-accent); color: white; }
         .two-column { display: grid; grid-template-columns: 280px 1fr; gap: 32px; }
         .pagination-container { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 32px; padding: 16px 0; }
         .page-btn { padding: 8px 14px; border: 1px solid var(--champagne-silt); border-radius: 6px; background: var(--pure-white); color: var(--navy); font-size: 13px; font-weight: 600; font-family: 'Montserrat', sans-serif; cursor: pointer; transition: all 0.2s ease; min-width: 38px; text-align: center; }
@@ -112,9 +117,6 @@
         ::-webkit-scrollbar-thumb:hover { background: var(--blue-accent); }
         @media (max-width: 1024px) { .two-column { grid-template-columns: 1fr; } .filter-panel { position: relative; top: 0; max-height: none; } }
         @media (max-width: 768px) { .header-content { flex-direction: column; gap: 16px; padding: 16px 20px; } .header-title h1 { font-size: 24px; } .header-center { order: -1; } .nav-tabs { overflow-x: auto; padding-bottom: 16px; } .tab-btn { white-space: nowrap; } .toolbar { flex-direction: column; gap: 12px; align-items: flex-start; } } 
-        
-        .tag.category-tag {background: rgba(46, 110, 181, 0.05); /* Very light blue tint */border-color: var(--blue-border);color: var(--blue-accent); /* Makes it look distinct from SBUs */
-}
     </style>
 </head>
 <body>
@@ -188,6 +190,7 @@
             'techno electric': 'Techno Electric', 'cg power': 'CG Power', 'crompton greaves': 'CG Power',
             'ge t&d': 'GE T&D', 'ge vernova': 'GE T&D'
         };
+        
         function normalizeCompetitor(name) {
             if (!name) return null;
             var trimmed = name.trim();
@@ -196,16 +199,19 @@
             if (COMPETITOR_ALIAS_MAP[lower]) return COMPETITOR_ALIAS_MAP[lower];
             return trimmed;
         }
+        
         function extractUniqueCompetitors(articles) {
             var set = new Set();
             articles.forEach(function(a) { a.competitors.forEach(function(c) { if (c) set.add(c); }); });
             return Array.from(set).sort();
         }
+        
         function normalizeArticleCompetitors(rawList) {
             var result = [];
             rawList.forEach(function(c) { var norm = normalizeCompetitor(c); if (norm && result.indexOf(norm) === -1) result.push(norm); });
             return result;
         }
+        
         function getDateCutoff(period) {
             if (period === 'All') return null;
             var now = new Date(); var cutoff = new Date();
@@ -216,7 +222,9 @@
             else if (period === '180') cutoff.setDate(now.getDate() - 180);
             return cutoff;
         }
+        
         function initApp() { loadDataFromAPI(); }
+        
         async function loadDataFromAPI() {
             try {
                 appData.isLoading = true;
@@ -225,11 +233,9 @@
                 var result = await response.json();
                 if (result.status === 'success' && result.data) {
                     appData.allArticles = result.data.map(function(row) {
-                       // Clean title by removing source suffix if present
                        var cleanTitle = row.newstitle || 'Untitled';
                        var source = row.Source || 'Unknown Source';
     
-                       // Remove " - Source" or " | Source" patterns from end of title
                        if (source !== 'Unknown Source') {
                            var patterns = [
                                ' - ' + source,
@@ -265,10 +271,12 @@
                 document.getElementById('contentArea').innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#9888;&#65039;</div><h3>Failed to Load Data</h3><p>Could not connect to the API.</p><p style="color:var(--text-secondary);font-size:14px;margin-top:16px;">Error: ' + error.message + '</p><button class="retry-btn" onclick="loadDataFromAPI()" style="margin-top:20px;">Retry</button></div>';
             }
         }
+        
         function parseList(str) { if (!str) return []; return str.toString().split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; }); }
         function changePageSize() { appData.pageSize = parseInt(document.getElementById('pageSizeSelect').value); appData.currentPage = 1; switchTab(appData.currentTab); }
         function goToPage(page) { appData.currentPage = page; switchTab(appData.currentTab); window.scrollTo({ top: 200, behavior: 'smooth' }); }
         function paginateArticles(articles) { var start = (appData.currentPage - 1) * appData.pageSize; return articles.slice(start, start + appData.pageSize); }
+        
         function renderPagination(totalArticles) {
             var totalPages = Math.ceil(totalArticles / appData.pageSize);
             if (totalPages <= 1) return '';
@@ -281,6 +289,7 @@
             html += '<button class="page-btn" onclick="goToPage(' + totalPages + ')" ' + (appData.currentPage === totalPages ? 'disabled' : '') + '>&raquo;</button></div>';
             return html;
         }
+        
         function switchTab(tabName) {
             appData.currentTab = tabName;
             var btns = document.querySelectorAll('.tab-btn');
@@ -296,6 +305,7 @@
             else if (tabName === 'competitor') { c.innerHTML = renderCompetitorView(); setupFilterHandlers(); }
             else if (tabName === 'industry') c.innerHTML = renderIndustryView();
         }
+        
         function renderExecutiveSummary() {
             var grouped = groupByCategory(appData.allArticles);
             var allFlat = []; for (var cat in grouped) grouped[cat].forEach(function(a) { a._cat = cat; allFlat.push(a); });
@@ -305,6 +315,7 @@
             html += '</div>' + renderPagination(allFlat.length);
             return html;
         }
+        
         function renderCompetitorView() {
             var allSBUs = new Set(), allCategories = new Set();
             var uniqueCompetitors = extractUniqueCompetitors(appData.allArticles);
@@ -317,6 +328,7 @@
                 '<div class="filter-buttons"><button class="filter-btn primary" onclick="applyFilters()">Apply</button><button class="filter-btn" onclick="clearFilters()">Clear</button></div></aside>' +
                 '<div id="filteredArticles">' + renderFilteredArticles() + '</div></div>';
         }
+        
         function renderIndustryView() {
             var sbuOrder = ['Intl T&D', 'India T&D', 'International T&D', 'Transportation', 'Civil', 'Renewables', 'Oil & Gas', 'General'];
             var grouped = {};
@@ -330,16 +342,58 @@
             html += '</div>' + renderPagination(allFlat.length);
             return html;
         }
+        
+        // NEW: Function to handle tag clicks
+        function filterByTag(type, value) {
+            // Switch to Competitor & SBU tab
+            switchTab('competitor');
+            
+            // Wait for DOM to update
+            setTimeout(function() {
+                // Set the appropriate filter
+                if (type === 'sbu') {
+                    appData.filters.sbu = value;
+                    document.getElementById('sbuFilter').value = value;
+                } else if (type === 'competitor') {
+                    appData.filters.competitor = value;
+                    document.getElementById('competitorFilter').value = value;
+                } else if (type === 'category') {
+                    appData.filters.category = value;
+                    document.getElementById('categoryFilter').value = value;
+                }
+                
+                // Apply filters
+                applyFilters();
+                
+                // Scroll to top
+                window.scrollTo({ top: 200, behavior: 'smooth' });
+            }, 100);
+        }
+        
         function renderArticleCard(article) {
             var d = new Date(article.date);
             var fd = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
             var sumHtml = article.summary ? '<div class="article-summary">' + article.summary + '</div>' : '';
-            return '<div class="article-card" onclick="window.open(\'' + article.link + '\', \'_blank\')">' +
-                '<div class="article-header"><h3 class="article-title">' + article.title + '</h3></div>' +
+            
+            // Build tags HTML with click handlers
+            var categoryTagsHtml = article.category ? 
+                '<span class="tag category-tag" onclick="event.stopPropagation(); filterByTag(\'category\', \'' + article.category.replace(/'/g, "\\'") + '\')">' + article.category + '</span>' : '';
+            
+            var sbuTagsHtml = article.sbu.map(function(s) { 
+                return '<span class="tag" onclick="event.stopPropagation(); filterByTag(\'sbu\', \'' + s.replace(/'/g, "\\'") + '\')">' + s + '</span>'; 
+            }).join('');
+            
+            var competitorTagsHtml = article.competitors.map(function(c) { 
+                return '<span class="tag competitor" onclick="event.stopPropagation(); filterByTag(\'competitor\', \'' + c.replace(/'/g, "\\'") + '\')">' + c + '</span>'; 
+            }).join('');
+            
+            return '<div class="article-card">' +
+                '<div class="article-header"><h3 class="article-title" onclick="window.open(\'' + article.link + '\', \'_blank\')">' + article.title + '</h3></div>' +
                 '<div class="article-meta"><span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' + fd + '</span></div>' +
                 sumHtml +
-                '<div class="article-tags">' + [article.category].filter(c => c).map(function(cat) { return '<span class="tag category-tag">' + cat + '</span>'; }).join('') + article.sbu.map(function(s) { return '<span class="tag">' + s + '</span>'; }).join('') + article.competitors.map(function(c) { return '<span class="tag competitor">' + c + '</span>'; }).join('') + '</div></div>';
+                '<div class="article-tags">' + categoryTagsHtml + sbuTagsHtml + competitorTagsHtml + '</div></div>';
         }
+        
         function getFilteredArticles() {
             var filtered = appData.allArticles;
             if (appData.filters.period !== 'All') { var cutoff = getDateCutoff(appData.filters.period); if (cutoff) filtered = filtered.filter(function(a) { return new Date(a.date) >= cutoff; }); }
@@ -348,16 +402,19 @@
             if (appData.filters.category !== 'All') filtered = filtered.filter(function(a) { return a.category === appData.filters.category; });
             return filtered;
         }
+        
         function renderFilteredArticles() {
             var filtered = getFilteredArticles();
             if (filtered.length === 0) return '<div class="empty-state"><div class="empty-state-icon">&#128269;</div><h3>No Articles Found</h3><p>Try adjusting your filter criteria</p></div>';
             var paginated = paginateArticles(filtered);
             return '<div class="articles-container">' + paginated.map(function(a) { return renderArticleCard(a); }).join('') + '</div>' + renderPagination(filtered.length);
         }
+        
         function setupFilterHandlers() {
             var p = document.getElementById('periodFilter'), s = document.getElementById('sbuFilter'), c = document.getElementById('competitorFilter'), cat = document.getElementById('categoryFilter');
             if (p) p.value = appData.filters.period; if (s) s.value = appData.filters.sbu; if (c) c.value = appData.filters.competitor; if (cat) cat.value = appData.filters.category;
         }
+        
         function applyFilters() {
             appData.filters.period = document.getElementById('periodFilter').value;
             appData.filters.sbu = document.getElementById('sbuFilter').value;
@@ -366,6 +423,7 @@
             appData.currentPage = 1;
             document.getElementById('filteredArticles').innerHTML = renderFilteredArticles();
         }
+        
         function clearFilters() {
             appData.filters = { sbu: 'All', competitor: 'All', category: 'All', period: 'All' };
             document.getElementById('periodFilter').value = 'All';
@@ -375,6 +433,7 @@
             appData.currentPage = 1;
             document.getElementById('filteredArticles').innerHTML = renderFilteredArticles();
         }
+        
         function groupByCategory(articles) { var g = {}; articles.forEach(function(a) { var c = a.category || 'General'; if (!g[c]) g[c] = []; g[c].push(a); }); return g; }
         function renderEmptyState() { return '<div class="empty-state"><div class="empty-state-icon">&#128202;</div><h3>No Data Available</h3><p>The database is currently empty. Data will appear here once your scraping pipeline populates the database.</p><button class="retry-btn" onclick="loadDataFromAPI()" style="margin-top:20px;">Refresh Data</button></div>'; }
         document.addEventListener('DOMContentLoaded', initApp);
