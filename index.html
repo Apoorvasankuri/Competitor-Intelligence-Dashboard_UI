@@ -335,7 +335,7 @@
         
         function renderIndustryView() {
             var industryArticles = appData.allArticles.filter(function(a) {
-                return a.category && a.category.toLowerCase() === 'industry';
+                return a.category && a.category.toLowerCase() === 'industry trends';
             });
             var paginated = paginateArticles(industryArticles);
             var html = '<div class="articles-container">';
