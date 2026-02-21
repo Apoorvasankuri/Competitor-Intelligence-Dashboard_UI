@@ -307,12 +307,16 @@
         }
         
         function renderExecutiveSummary() {
-            var grouped = groupByCategory(appData.allArticles);
-            var allFlat = []; for (var cat in grouped) grouped[cat].forEach(function(a) { a._cat = cat; allFlat.push(a); });
-            var paginated = paginateArticles(allFlat);
-            var html = '<div class="articles-container">', currentCat = '';
-            paginated.forEach(function(article) { if (article._cat !== currentCat) { currentCat = article._cat; html += '<div class="category-header">' + currentCat.toUpperCase() + '</div>'; } html += renderArticleCard(article); });
-            html += '</div>' + renderPagination(allFlat.length);
+            var top15 = appData.allArticles.slice(0, 15);
+            var grouped = groupByCategory(top15);
+            var html = '<div class="articles-container">';
+            Object.keys(grouped).sort().forEach(function(cat) {
+                html += '<div class="category-header">' + cat.toUpperCase() + '</div>';
+                grouped[cat].forEach(function(article) {
+                    html += renderArticleCard(article);
+                });
+            });
+            html += '</div>';
             return html;
         }
         
@@ -330,16 +334,20 @@
         }
         
         function renderIndustryView() {
-            var sbuOrder = ['Intl T&D', 'India T&D', 'International T&D', 'Transportation', 'Civil', 'Renewables', 'Oil & Gas', 'General'];
-            var grouped = {};
-            appData.allArticles.forEach(function(a) { var p = a.sbu[0] || 'General'; if (!grouped[p]) grouped[p] = []; grouped[p].push(a); });
-            var allFlat = [];
-            sbuOrder.forEach(function(s) { if (grouped[s]) grouped[s].forEach(function(a) { a._sbuGroup = s; allFlat.push(a); }); });
-            Object.keys(grouped).forEach(function(s) { if (sbuOrder.indexOf(s) === -1) grouped[s].forEach(function(a) { a._sbuGroup = s; allFlat.push(a); }); });
-            var paginated = paginateArticles(allFlat);
-            var html = '<div class="articles-container">', currentSBU = '';
-            paginated.forEach(function(a) { if (a._sbuGroup !== currentSBU) { currentSBU = a._sbuGroup; html += '<div class="category-header">' + currentSBU.toUpperCase() + '</div>'; } html += renderArticleCard(a); });
-            html += '</div>' + renderPagination(allFlat.length);
+            var industryArticles = appData.allArticles.filter(function(a) {
+                return a.category && a.category.toLowerCase() === 'industry';
+            });
+            var paginated = paginateArticles(industryArticles);
+            var html = '<div class="articles-container">';
+            if (paginated.length === 0) {
+                html += '<div class="empty-state"><div class="empty-state-icon">🏭</div><h3>No Industry Articles</h3><p>No articles tagged with "Industry" category found.</p></div>';
+            } else {
+                html += '<div class="category-header">INDUSTRY</div>';
+                paginated.forEach(function(a) {
+                    html += renderArticleCard(a);
+                });
+            }
+            html += '</div>' + renderPagination(industryArticles.length);
             return html;
         }
         
