@@ -347,26 +347,38 @@ function renderExecutiveSummary() {
 
     var html = '<div class="articles-container">';
     orderedCats.forEach(function(cat) {
-        html += '<div class="article-card">';
-        html += '<div class="category-header" style="margin: -24px -24px 20px -24px; border-radius: 8px 8px 0 0;">' + cat.toUpperCase() + '</div>';
-        html += '<ul style="list-style:none; padding:0; margin:0;">';
-        grouped[cat].forEach(function(article) {
-            html += '<li class="exec-bullet" style="padding: 14px 0; border-bottom: 1px solid var(--champagne-silt);">';
-            var summary = article.summary || 'No summary available.';
-if (article.competitors && article.competitors.length > 0) {
-    article.competitors.forEach(function(c) {
-        var regex = new RegExp('(' + c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
-        summary = summary.replace(regex, '<strong>$1</strong>');
+    html += '<div class="article-card">';
+    html += '<div class="category-header" style="margin: -24px -24px 20px -24px; border-radius: 8px 8px 0 0;">' + cat.toUpperCase() + '</div>';
+    html += '<ul style="list-style:none; padding:0; margin:0;">';
+    grouped[cat].forEach(function(article) {
+        html += '<li class="exec-bullet" style="padding: 14px 0; border-bottom: 1px solid var(--champagne-silt);">';
+        var summary = article.summary || 'No summary available.';
+        if (article.competitors && article.competitors.length > 0) {
+            var allVariations = [];
+            article.competitors.forEach(function(normalizedName) {
+                allVariations.push(normalizedName);
+                Object.keys(COMPETITOR_ALIAS_MAP).forEach(function(variation) {
+                    if (COMPETITOR_ALIAS_MAP[variation] === normalizedName) {
+                        allVariations.push(variation);
+                    }
+                });
+            });
+            allVariations.sort(function(a, b) { return b.length - a.length; });
+            var escapedVariations = allVariations.map(function(v) {
+                return v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            });
+            var combinedRegex = new RegExp('(' + escapedVariations.join('|') + ')', 'gi');
+            summary = summary.replace(combinedRegex, '<strong>$1</strong>');
+        }
+        html += '<div style="font-size:14px; color:var(--text-body); line-height:1.6;">' + summary + '</div>';
+        html += '</li>';
     });
-}
-html += '<div style="font-size:14px; color:var(--text-body); line-height:1.6;">' + summary + '</div>';
-            html += '</li>';
-        });
-        html += '</ul></div>';
-    });
+    html += '</ul></div>';
+});
+
     html += '</div>';
     return html;
-}
+} 
         
         function renderCompetitorView() {
             var allSBUs = new Set(), allCategories = new Set();
