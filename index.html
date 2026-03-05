@@ -84,6 +84,7 @@
         .article-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--navy); transform: scaleY(0); transition: transform 0.3s ease; }
         .article-card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(15,43,76,0.12); border-color: var(--blue-accent); }
         .article-card:hover::before { transform: scaleY(1); }
+        .exec-bullet:last-child { border-bottom: none !important; }
         .article-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
         .article-title { font-family: 'Public Sans', sans-serif; font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 12px; line-height: 1.4; cursor: pointer; }
         .article-title:hover { color: var(--blue-accent); }
@@ -259,7 +260,8 @@
                            category: row.category_tag || 'General', 
                            sbu: parseList(row.sbu_tagging || row.sbu || ''), 
                            competitors: normalizeArticleCompetitors(parseList(row.competitor_tagging || '')), 
-                           summary: row.kec_business_summary || '' 
+                           summary: row.kec_business_summary || '',
+                           rankScore: row.rank_score || 0 
                        };
                     });
                     appData.currentPage = 1;
@@ -306,19 +308,65 @@
             else if (tabName === 'industry') c.innerHTML = renderIndustryView();
         }
         
-        function renderExecutiveSummary() {
-            var top15 = appData.allArticles.slice(0, 15);
-            var grouped = groupByCategory(top15);
-            var html = '<div class="articles-container">';
-            Object.keys(grouped).sort().forEach(function(cat) {
-                html += '<div class="category-header">' + cat.toUpperCase() + '</div>';
-                grouped[cat].forEach(function(article) {
-                    html += renderArticleCard(article);
+        var CATEGORY_ORDER = [
+    'order wins', 'bidding activity', 'project execution',
+    'mergers & acquisitions', 'partnerships & alliances',
+    'financial', 'stock market'
+];
+
+function renderExecutiveSummary() {
+    var sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    var recent = appData.allArticles.filter(function(a) {
+        return new Date(a.date) >= sevenDaysAgo;
+    });
+
+    var grouped = {};
+    recent.forEach(function(a) {
+        var cat = (a.category || 'general').toLowerCase();
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(a);
+    });
+
+    // Sort each category by rankScore descending, take top 5
+    Object.keys(grouped).forEach(function(cat) {
+        grouped[cat].sort(function(a, b) { return b.rankScore - a.rankScore; });
+        grouped[cat] = grouped[cat].slice(0, 5);
+    });
+
+    // Build ordered list of categories to display
+    var orderedCats = CATEGORY_ORDER.filter(function(cat) { return grouped[cat] && grouped[cat].length > 0; });
+    Object.keys(grouped).sort().forEach(function(cat) {
+        if (CATEGORY_ORDER.indexOf(cat) === -1 && grouped[cat].length > 0) orderedCats.push(cat);
+    });
+
+    if (orderedCats.length === 0) {
+        return '<div class="empty-state"><div class="empty-state-icon">📰</div><h3>No Articles This Week</h3><p>No articles published in the last 7 days.</p></div>';
+    }
+
+    var html = '<div class="articles-container">';
+    orderedCats.forEach(function(cat) {
+        html += '<div class="article-card">';
+        html += '<div class="category-header" style="margin: -24px -24px 20px -24px; border-radius: 8px 8px 0 0;">' + cat.toUpperCase() + '</div>';
+        html += '<ul style="list-style:none; padding:0; margin:0;">';
+        grouped[cat].forEach(function(article) {
+            html += '<li class="exec-bullet" style="padding: 14px 0; border-bottom: 1px solid var(--champagne-silt);">';
+            html += '<div style="font-size:14px; color:var(--text-body); line-height:1.6; margin-bottom:8px;">' + (article.summary || 'No summary available.') + '</div>';
+            if (article.competitors && article.competitors.length > 0) {
+                html += '<div style="display:flex; gap:8px; flex-wrap:wrap;">';
+                article.competitors.forEach(function(c) {
+                    html += '<span class="tag competitor">' + c + '</span>';
                 });
-            });
-            html += '</div>';
-            return html;
-        }
+                html += '</div>';
+            }
+            html += '</li>';
+        });
+        html += '</ul></div>';
+    });
+    html += '</div>';
+    return html;
+}
         
         function renderCompetitorView() {
             var allSBUs = new Set(), allCategories = new Set();
