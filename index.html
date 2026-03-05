@@ -352,14 +352,14 @@ function renderExecutiveSummary() {
         html += '<ul style="list-style:none; padding:0; margin:0;">';
         grouped[cat].forEach(function(article) {
             html += '<li class="exec-bullet" style="padding: 14px 0; border-bottom: 1px solid var(--champagne-silt);">';
-            html += '<div style="font-size:14px; color:var(--text-body); line-height:1.6; margin-bottom:8px;">' + (article.summary || 'No summary available.') + '</div>';
-            if (article.competitors && article.competitors.length > 0) {
-                html += '<div style="display:flex; gap:8px; flex-wrap:wrap;">';
-                article.competitors.forEach(function(c) {
-                    html += '<span class="tag competitor">' + c + '</span>';
-                });
-                html += '</div>';
-            }
+            var summary = article.summary || 'No summary available.';
+if (article.competitors && article.competitors.length > 0) {
+    article.competitors.forEach(function(c) {
+        var regex = new RegExp('(' + c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+        summary = summary.replace(regex, '<strong>$1</strong>');
+    });
+}
+html += '<div style="font-size:14px; color:var(--text-body); line-height:1.6;">' + summary + '</div>';
             html += '</li>';
         });
         html += '</ul></div>';
