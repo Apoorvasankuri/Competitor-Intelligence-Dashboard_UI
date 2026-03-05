@@ -325,6 +325,7 @@ function renderExecutiveSummary() {
     var grouped = {};
     recent.forEach(function(a) {
         var cat = (a.category || 'general').toLowerCase();
+        if (cat === 'industry trends' || cat === 'stock market') return;
         if (!grouped[cat]) grouped[cat] = [];
         grouped[cat].push(a);
     });
