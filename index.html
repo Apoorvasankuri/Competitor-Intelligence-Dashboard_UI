@@ -353,16 +353,21 @@ function renderExecutiveSummary() {
     grouped[cat].forEach(function(article) {
         html += '<li class="exec-bullet" style="padding: 14px 0; border-bottom: 1px solid var(--champagne-silt);">';
         var summary = article.summary || 'No summary available.';
-        if (article.competitors && article.competitors.length > 0) {
-            var allVariations = [];
-            article.competitors.forEach(function(normalizedName) {
-                allVariations.push(normalizedName);
-                Object.keys(COMPETITOR_ALIAS_MAP).forEach(function(variation) {
-                    if (COMPETITOR_ALIAS_MAP[variation] === normalizedName) {
-                        allVariations.push(variation);
-                    }
-                });
-            });
+        {
+    var allNormalizedNames = [];
+    Object.keys(COMPETITOR_ALIAS_MAP).forEach(function(variation) {
+        var norm = COMPETITOR_ALIAS_MAP[variation];
+        if (allNormalizedNames.indexOf(norm) === -1) allNormalizedNames.push(norm);
+    });
+    var allVariations = [];
+    allNormalizedNames.forEach(function(normalizedName) {
+        allVariations.push(normalizedName);
+        Object.keys(COMPETITOR_ALIAS_MAP).forEach(function(variation) {
+            if (COMPETITOR_ALIAS_MAP[variation] === normalizedName) {
+                allVariations.push(variation);
+            }
+        });
+    });
             allVariations.sort(function(a, b) { return b.length - a.length; });
             var escapedVariations = allVariations.map(function(v) {
                 return v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
