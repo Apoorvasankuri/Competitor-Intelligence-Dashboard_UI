@@ -260,7 +260,7 @@
                            category: row.category_tag || 'General', 
                            sbu: parseList(row.sbu_tagging || row.sbu || ''), 
                            competitors: normalizeArticleCompetitors(parseList(row.competitor_tagging || '')), 
-                           summary: row.kec_business_summary || '',
+                           summary: row.summary || row.kec_business_summary || '',
                            rankScore: row.rank_score || 0 
                        };
                     });
@@ -325,6 +325,7 @@ function renderExecutiveSummary() {
     var grouped = {};
     recent.forEach(function(a) {
         var cat = (a.category || 'general').toLowerCase();
+        // Exclude stock market and industry trends
         if (cat === 'industry trends' || cat === 'stock market') return;
         if (!grouped[cat]) grouped[cat] = [];
         grouped[cat].push(a);
@@ -337,7 +338,9 @@ function renderExecutiveSummary() {
     });
 
     // Build ordered list of categories to display
-    var orderedCats = CATEGORY_ORDER.filter(function(cat) { return grouped[cat] && grouped[cat].length > 0; });
+    var orderedCats = CATEGORY_ORDER.filter(function(cat) {
+        return grouped[cat] && grouped[cat].length > 0;
+    });
     Object.keys(grouped).sort().forEach(function(cat) {
         if (CATEGORY_ORDER.indexOf(cat) === -1 && grouped[cat].length > 0) orderedCats.push(cat);
     });
@@ -347,45 +350,60 @@ function renderExecutiveSummary() {
     }
 
     var html = '<div class="articles-container">';
+
     orderedCats.forEach(function(cat) {
-    html += '<div class="article-card">';
-    html += '<div class="category-header" style="margin: -24px -24px 20px -24px; border-radius: 8px 8px 0 0;">' + cat.toUpperCase() + '</div>';
-    html += '<ul style="list-style:none; padding:0; margin:0;">';
-    grouped[cat].forEach(function(article) {
-        html += '<li class="exec-bullet" style="padding: 14px 0; border-bottom: 1px solid var(--champagne-silt);">';
-        var summary = article.summary || 'No summary available.';
-        {
-    var allNormalizedNames = [];
-    Object.keys(COMPETITOR_ALIAS_MAP).forEach(function(variation) {
-        var norm = COMPETITOR_ALIAS_MAP[variation];
-        if (allNormalizedNames.indexOf(norm) === -1) allNormalizedNames.push(norm);
-    });
-    var allVariations = [];
-    allNormalizedNames.forEach(function(normalizedName) {
-        allVariations.push(normalizedName);
-        Object.keys(COMPETITOR_ALIAS_MAP).forEach(function(variation) {
-            if (COMPETITOR_ALIAS_MAP[variation] === normalizedName) {
-                allVariations.push(variation);
+        html += '<div class="article-card">';
+        html += '<div class="category-header" style="margin: -24px -24px 20px -24px; border-radius: 8px 8px 0 0;">' + cat.toUpperCase() + '</div>';
+        html += '<ul style="list-style:none; padding:0; margin:0;">';
+
+        grouped[cat].forEach(function(article) {
+            html += '<li class="exec-bullet" style="padding: 16px 0; border-bottom: 1px solid var(--champagne-silt);">';
+
+            // Bold competitor names using the article's own normalized competitors array
+            var summary = article.summary || article.title || 'No summary available.';
+            if (article.competitors && article.competitors.length > 0) {
+                // Sort by length descending to match longer names first (e.g. "Tata Projects" before "Tata")
+                var sortedCompetitors = article.competitors.slice().sort(function(a, b) {
+                    return b.length - a.length;
+                });
+                sortedCompetitors.forEach(function(competitor) {
+                    if (!competitor || competitor === '-') return;
+                    var escaped = competitor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    var regex = new RegExp('(' + escaped + ')', 'gi');
+                    summary = summary.replace(regex, '<strong>$1</strong>');
+                });
             }
+
+            html += '<div style="font-size:14px; color:var(--text-body); line-height:1.7;">' + summary + '</div>';
+
+            // Source + date line
+            var d = new Date(article.date);
+            var fd = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            html += '<div style="margin-top:6px; font-size:12px; color:var(--text-secondary); display:flex; gap:12px; align-items:center;">';
+            html += '<span>' + fd + '</span>';
+            if (article.source && article.source !== 'Unknown Source') {
+                html += '<span style="color:var(--champagne-silt);">|</span>';
+                html += '<span style="font-style:italic;">' + article.source + '</span>';
+            }
+            // Clickable competitors as mini tags
+            if (article.competitors && article.competitors.length > 0) {
+                html += '<span style="color:var(--champagne-silt);">|</span>';
+                article.competitors.forEach(function(c) {
+                    if (!c || c === '-') return;
+                    html += '<span onclick="filterByTag(\'competitor\', \'' + c.replace(/'/g, "\\'") + '\')" style="cursor:pointer; background:rgba(15,43,76,0.08); padding:2px 8px; border-radius:10px; font-size:11px; color:var(--navy); font-weight:600;">' + c + '</span>';
+                });
+            }
+            html += '</div>';
+
+            html += '</li>';
         });
+
+        html += '</ul></div>';
     });
-            allVariations.sort(function(a, b) { return b.length - a.length; });
-            var escapedVariations = allVariations.map(function(v) {
-                return v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            });
-            var combinedRegex = new RegExp('(' + escapedVariations.join('|') + ')', 'gi');
-            summary = summary.replace(combinedRegex, '<strong>$1</strong>');
-        }
-        html += '<div style="font-size:14px; color:var(--text-body); line-height:1.6;">' + summary + '</div>';
-        html += '</li>';
-    });
-    html += '</ul></div>';
-});
 
     html += '</div>';
     return html;
-} 
-        
+}        
         function renderCompetitorView() {
             var allSBUs = new Set(), allCategories = new Set();
             var uniqueCompetitors = extractUniqueCompetitors(appData.allArticles);
