@@ -337,40 +337,53 @@ function renderExecutiveSummary() {
     });
 
     var dedupedCat = [];
-    grouped[cat].forEach(function(article) {
-        var isDuplicate = dedupedCat.some(function(kept) {
+grouped[cat].forEach(function(article) {
+    var isDuplicate = dedupedCat.some(function(kept) {
 
-            // Same competitors involved
-            var sharedCompetitor = article.competitors.some(function(c) {
+        var stopWords = new Set(['a','an','the','and','or','in','on','at','to','for','of','with','by','is','was','has','this','that','their','these','will','been','also','from']);
+
+        // Helper: compute Jaccard similarity between two summaries
+        function jaccardSimilarity(text1, text2) {
+            var w1 = text1.toLowerCase().split(/\W+/).filter(function(w) { return w.length > 3 && !stopWords.has(w); });
+            var w2 = text2.toLowerCase().split(/\W+/).filter(function(w) { return w.length > 3 && !stopWords.has(w); });
+            if (!w1.length || !w2.length) return 0;
+            var set2 = new Set(w2);
+            var intersection = w1.filter(function(w) { return set2.has(w); }).length;
+            var union = new Set(w1.concat(w2)).size;
+            return union > 0 ? intersection / union : 0;
+        }
+
+        var summary1 = article.summary || article.title || '';
+        var summary2 = kept.summary || kept.title || '';
+        var jaccard = jaccardSimilarity(summary1, summary2);
+
+        // Signal 1: High summary similarity alone is enough (catches IRCON/RVNL case)
+        if (jaccard > 0.35) return true;
+
+        // Signal 2: Same competitors involved
+        var sharedCompetitor = article.competitors.length > 0 && kept.competitors.length > 0 &&
+            article.competitors.some(function(c) {
                 return kept.competitors.indexOf(c) !== -1;
             });
-            if (!sharedCompetitor) return false;
+        if (!sharedCompetitor) return false;
 
-            // Same contract value (already extracted by backend)
-            var val1 = article.contractValue;
-            var val2 = kept.contractValue;
-            if (val1 && val2 && Math.abs(val1 - val2) / Math.max(val1, val2) < 0.10) return true;
+        // Signal 3: Same contract value
+        var val1 = article.contractValue;
+        var val2 = kept.contractValue;
+        if (val1 && val2 && Math.abs(val1 - val2) / Math.max(val1, val2) < 0.10) return true;
 
-            // Same geography
-            if (article.geography && kept.geography &&
-                article.geography.toLowerCase() === kept.geography.toLowerCase()) {
+        // Signal 4: Same competitor + moderate summary overlap (catches Kernex JV variants)
+        if (sharedCompetitor && jaccard > 0.20) return true;
 
-                // Summary word overlap as tiebreaker
-                var stopWords = new Set(['a','an','the','and','or','in','on','at','to','for','of','with','by','is','was','has']);
-                var words1 = (article.summary || '').toLowerCase().split(/\W+/).filter(function(w) { return w.length > 3 && !stopWords.has(w); });
-                var words2 = (kept.summary || '').toLowerCase().split(/\W+/).filter(function(w) { return w.length > 3 && !stopWords.has(w); });
-                var set2 = new Set(words2);
-                var intersection = words1.filter(function(w) { return set2.has(w); }).length;
-                var union = new Set(words1.concat(words2)).size;
-                if (union > 0 && intersection / union > 0.40) return true;
-            }
+        // Signal 5: Same competitor + same geography
+        if (sharedCompetitor && article.geography && kept.geography &&
+            article.geography.toLowerCase() === kept.geography.toLowerCase()) return true;
 
-            return false;
-        });
-
-        if (!isDuplicate) dedupedCat.push(article);
+        return false;
     });
 
+    if (!isDuplicate) dedupedCat.push(article);
+});
     grouped[cat] = dedupedCat.slice(0, 5);
 });
     // Build ordered list of categories to display
