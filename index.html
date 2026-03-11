@@ -126,7 +126,7 @@
         <header class="header">
             <div class="header-content">
                 <div class="logo-section">
-                    <img src="https://raw.githubusercontent.com/Apoorvasankuri/Competitor-Intelligence-Dashboard_UI/main/IVY%20Logo.png"" alt="IVY Logo" class="ivy-logo">
+                    <img src="https://raw.githubusercontent.com/Apoorvasankuri/Competitor-Intelligence-Dashboard_UI/main/IVY%20Logo.png" alt="IVY Logo" class="ivy-logo">
                 </div>
                 <div class="header-center">
                     <div class="header-title">
@@ -258,7 +258,7 @@
                            sbu: parseList(row.sbu_tagging || row.sbu || ''), 
                            competitors: normalizeArticleCompetitors(parseList(row.competitor_tagging || '')), 
                            summary: row.summary || row.kec_business_summary || '',
-                           rankScore: row.rank_score || 0 
+                           rankScore: row.rank_score || 0,
                            contractValue: row.contract_value_inr_crore || null,  // ADD THIS
                            geography: row.geography || null                       // ADD THIS
                        };
