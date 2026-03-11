@@ -252,13 +252,15 @@
                        return { 
                            title: cleanTitle, 
                            date: row.publishedate || new Date().toISOString(), 
-                           source: source, 
+                           source: row.source, 
                            link: row.link || '#', 
                            category: row.category_tag || 'General', 
                            sbu: parseList(row.sbu_tagging || row.sbu || ''), 
                            competitors: normalizeArticleCompetitors(parseList(row.competitor_tagging || '')), 
                            summary: row.summary || row.kec_business_summary || '',
                            rankScore: row.rank_score || 0 
+                           contractValue: row.contract_value_inr_crore || null,  // ADD THIS
+                           geography: row.geography || null                       // ADD THIS
                        };
                     });
                     appData.currentPage = 1;
@@ -328,12 +330,49 @@ function renderExecutiveSummary() {
         grouped[cat].push(a);
     });
 
-    // Sort each category by rankScore descending, take top 5
     Object.keys(grouped).forEach(function(cat) {
-        grouped[cat].sort(function(a, b) { return b.rankScore - a.rankScore; });
-        grouped[cat] = grouped[cat].slice(0, 5);
+    grouped[cat].sort(function(a, b) {
+        if (b.rankScore !== a.rankScore) return b.rankScore - a.rankScore;
+        return new Date(b.date) - new Date(a.date);
     });
 
+    var dedupedCat = [];
+    grouped[cat].forEach(function(article) {
+        var isDuplicate = dedupedCat.some(function(kept) {
+
+            // Same competitors involved
+            var sharedCompetitor = article.competitors.some(function(c) {
+                return kept.competitors.indexOf(c) !== -1;
+            });
+            if (!sharedCompetitor) return false;
+
+            // Same contract value (already extracted by backend)
+            var val1 = article.contractValue;
+            var val2 = kept.contractValue;
+            if (val1 && val2 && Math.abs(val1 - val2) / Math.max(val1, val2) < 0.10) return true;
+
+            // Same geography
+            if (article.geography && kept.geography &&
+                article.geography.toLowerCase() === kept.geography.toLowerCase()) {
+
+                // Summary word overlap as tiebreaker
+                var stopWords = new Set(['a','an','the','and','or','in','on','at','to','for','of','with','by','is','was','has']);
+                var words1 = (article.summary || '').toLowerCase().split(/\W+/).filter(function(w) { return w.length > 3 && !stopWords.has(w); });
+                var words2 = (kept.summary || '').toLowerCase().split(/\W+/).filter(function(w) { return w.length > 3 && !stopWords.has(w); });
+                var set2 = new Set(words2);
+                var intersection = words1.filter(function(w) { return set2.has(w); }).length;
+                var union = new Set(words1.concat(words2)).size;
+                if (union > 0 && intersection / union > 0.40) return true;
+            }
+
+            return false;
+        });
+
+        if (!isDuplicate) dedupedCat.push(article);
+    });
+
+    grouped[cat] = dedupedCat.slice(0, 5);
+});
     // Build ordered list of categories to display
     var orderedCats = CATEGORY_ORDER.filter(function(cat) {
         return grouped[cat] && grouped[cat].length > 0;
