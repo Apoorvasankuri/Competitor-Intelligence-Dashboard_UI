@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEC Competitor Intelligence — Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --navy: #0F2B4C; --navy-light: #1A3D6D;
+            --gold: #C9A84C; --ivory: #F9F8F3;
+            --champagne: #E5E2D0; --white: #FFFFFF;
+            --text: #333333; --text-secondary: #666666;
+            --blue-accent: #2E6EB5; --error: #C62828;
+        }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: radial-gradient(ellipse at center, var(--ivory) 0%, #F2F0E4 100%);
+            min-height: 100vh; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-image: linear-gradient(rgba(15,43,76,0.02) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(15,43,76,0.02) 1px, transparent 1px);
+            background-size: 60px 60px; pointer-events: none; z-index: 0;
+        }
+        .login-card {
+            position: relative; z-index: 1;
+            background: var(--white); border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(15,43,76,0.15);
+            width: 100%; max-width: 440px;
+            overflow: hidden;
+        }
+        .card-header {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 50%, #4a7ab5 100%);
+            padding: 40px 40px 32px;
+            border-bottom: 3px solid var(--gold);
+            text-align: center;
+        }
+        .logos { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .ivy-logo { height: 40px; width: auto; object-fit: contain; }
+        .kec-logo { height: 32px; width: auto; object-fit: contain; max-width: 100px; }
+        .card-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px; color: var(--white);
+            font-weight: 700; margin-bottom: 6px;
+        }
+        .card-header p {
+            font-size: 11px; color: var(--gold);
+            letter-spacing: 2px; text-transform: uppercase;
+        }
+        .card-body { padding: 40px; }
+        .form-group { margin-bottom: 24px; }
+        .form-group label {
+            display: block; font-size: 12px; font-weight: 600;
+            color: var(--text); text-transform: uppercase;
+            letter-spacing: 0.5px; margin-bottom: 8px;
+        }
+        .form-input {
+            width: 100%; padding: 14px 16px;
+            border: 1.5px solid var(--champagne);
+            border-radius: 6px; font-size: 14px;
+            font-family: 'Montserrat', sans-serif;
+            background: var(--ivory); color: var(--text);
+            transition: all 0.2s ease;
+        }
+        .form-input:focus {
+            outline: none; border-color: var(--navy);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(15,43,76,0.08);
+        }
+        .login-btn {
+            width: 100%; padding: 14px;
+            background: var(--navy); color: var(--white);
+            border: none; border-radius: 6px;
+            font-size: 14px; font-weight: 600;
+            font-family: 'Montserrat', sans-serif;
+            cursor: pointer; transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+        }
+        .login-btn:hover {
+            background: var(--navy-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(15,43,76,0.25);
+        }
+        .login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .error-msg {
+            background: #FFEBEE; color: var(--error);
+            border: 1px solid #FFCDD2; border-radius: 6px;
+            padding: 12px 16px; font-size: 13px;
+            margin-bottom: 20px; display: none;
+        }
+        .card-footer {
+            padding: 16px 40px; background: var(--ivory);
+            border-top: 1px solid var(--champagne);
+            text-align: center;
+        }
+        .card-footer p { font-size: 12px; color: var(--text-secondary); }
+        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="card-header">
+            <div class="logos">
+                <img src="IVY Logo.png" alt="IVY" class="ivy-logo">
+                <img src="KEC Logo.png" alt="KEC" class="kec-logo">
+            </div>
+            <h1>Competitor Intelligence</h1>
+            <p>Strategic Market Analysis Platform</p>
+        </div>
+        <div class="card-body">
+            <div class="error-msg" id="errorMsg"></div>
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <div style="display:flex;align-items:center;">
+                    <input type="text" id="email" class="form-input"
+                           placeholder="firstname.lastname"
+                           style="border-radius:6px 0 0 6px;border-right:none;"
+                           onkeydown="if(event.key==='Enter') doLogin()" oninput="checkAdminEmail()">
+                    <span style="padding:14px 16px;background:var(--champagne-silt);border:1.5px solid var(--champagne-silt);border-radius:0 6px 6px 0;font-size:13px;color:var(--text-secondary);white-space:nowrap;font-family:'Montserrat',sans-serif;">@kecrpg.com</span>
+                </div>
+            </div>
+            <button class="login-btn" id="loginBtn" onclick="doLogin()">
+                Sign In
+            </button>
+        </div>
+        <div class="card-footer">
+            <p>Having trouble? Contact your system administrator.</p>
+        </div>
+    </div>
+
+    <script>
+        var LOCAL_API = 'http://127.0.0.1:8000';
+
+        // If already logged in, redirect to dashboard
+        var existingToken = localStorage.getItem('kec_token');
+        if (existingToken) {
+            fetch(LOCAL_API + '/api/auth/me?token=' + existingToken)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.status === 'success') {
+                        window.location.href = 'index.html';
+                    } else {
+                        localStorage.removeItem('kec_token');
+                        localStorage.removeItem('kec_user');
+                    }
+                })
+                .catch(function() {});
+        }
+
+        async function doLogin() {
+            var email = document.getElementById('email').value.trim();
+            var btn = document.getElementById('loginBtn');
+            var errorMsg = document.getElementById('errorMsg');
+
+            if (!email) {
+                showError('Please enter your email address.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span>Signing in...';
+            errorMsg.style.display = 'none';
+
+            try {
+                var response = await fetch(LOCAL_API + '/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, password: '' })
+                });
+
+                var data = await response.json();
+
+                if (data.status === 'success') {
+                    localStorage.setItem('kec_token', data.token);
+                    localStorage.setItem('kec_user', JSON.stringify(data.user));
+                    window.location.href = 'index.html';
+                } else {
+                    showError('Invalid email or password. Please try again.');
+                    btn.disabled = false;
+                    btn.innerHTML = 'Sign In';
+                }
+            } catch (e) {
+                showError('Could not connect to the server. Make sure the backend is running.');
+                btn.disabled = false;
+                btn.innerHTML = 'Sign In';
+            }
+        }
+
+        function showError(msg) {
+            var el = document.getElementById('errorMsg');
+            el.textContent = msg;
+            el.style.display = 'block';
+        }
+    </script>
+</body>
+</html> 

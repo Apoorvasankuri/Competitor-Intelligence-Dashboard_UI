@@ -119,6 +119,27 @@
         ::-webkit-scrollbar-thumb:hover { background: var(--blue-accent); }
         @media (max-width: 1024px) { .two-column { grid-template-columns: 1fr; } .filter-panel { position: relative; top: 0; max-height: none; } }
         @media (max-width: 768px) { .header-content { flex-direction: column; gap: 16px; padding: 16px 20px; } .header-title h1 { font-size: 24px; } .header-center { order: -1; } .nav-tabs { overflow-x: auto; padding-bottom: 16px; } .tab-btn { white-space: nowrap; } .toolbar { flex-direction: column; gap: 12px; align-items: flex-start; } } 
+    .assign-table { width: 100%; border-collapse: collapse; background: var(--pure-white); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+.assign-table th { background: var(--navy); color: #FFFFFF; padding: 14px 16px; text-align: left; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; font-family: 'Montserrat', sans-serif; }
+.assign-table td { padding: 14px 16px; border-bottom: 1px solid var(--champagne-silt); font-size: 13px; vertical-align: middle; }
+.assign-table tr:last-child td { border-bottom: none; }
+.assign-table tr:hover td { background: var(--blue-pale); }
+.category-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(201,168,76,0.15); color: #8B7335; border: 1px solid var(--gold-accent); }
+.picker-wrap { position: relative; }
+.picker-input { width: 100%; padding: 8px 12px; border: 1px solid var(--champagne-silt); border-radius: 6px; font-size: 13px; font-family: 'Montserrat', sans-serif; background: var(--ivory-linen); transition: all 0.2s; min-width: 200px; }
+.picker-input:focus { outline: none; border-color: var(--navy); background: white; box-shadow: 0 0 0 3px rgba(15,43,76,0.08); }
+.picker-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--champagne-silt); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 999; max-height: 200px; overflow-y: auto; display: none; }
+.picker-dropdown.open { display: block; }
+.picker-option { padding: 10px 14px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--champagne-silt); }
+.picker-option:last-child { border-bottom: none; }
+.picker-option:hover { background: var(--blue-pale); color: var(--navy); font-weight: 600; }
+.picker-option .opt-role { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.assign-send-btn { background: var(--navy); color: white; border: none; padding: 12px 32px; border-radius: 6px; font-size: 14px; font-weight: 600; font-family: 'Montserrat', sans-serif; cursor: pointer; transition: all 0.3s; margin-top: 24px; }
+.assign-send-btn:hover { background: var(--navy-light); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(15,43,76,0.2); }
+.assign-send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.assign-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 6px; padding: 14px 20px; margin-top: 16px; font-size: 14px; font-weight: 600; display: none; }
+.manager-input-wrap { background: var(--pure-white); border-radius: 8px; padding: 20px 24px; border: 1px solid var(--champagne-silt); margin-bottom: 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.manager-input-wrap label { font-size: 13px; font-weight: 600; color: var(--navy); white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -158,12 +179,18 @@
             <button class="tab-btn active" onclick="switchTab('executive')">Executive Summary</button>
             <button class="tab-btn" onclick="switchTab('competitor')">Competitor &amp; SBU</button>
             <button class="tab-btn" onclick="switchTab('industry')">Industry</button>
+<button class="tab-btn" onclick="switchTab('assign')">⚡ Assign Actions</button>
+<button class="tab-btn" id="adminTabBtn" style="display:none;" onclick="switchTab('admin')">⚙ Admin</button>
         </nav>
         <main class="content-area" id="contentArea"></main>
     </div>
     <script>
         var API_BASE_URL = 'https://competitor-intelligence-dashboard.onrender.com';
-        var appData = { allArticles: [], currentTab: 'executive', filters: { sbu: 'All', competitor: 'All', category: 'All', period: 'All' }, isLoading: false, currentPage: 1, pageSize: 20 };
+                var LOCAL_API = 'http://127.0.0.1:8000';
+                var kecToken = localStorage.getItem('kec_token');
+                var kecUser = JSON.parse(localStorage.getItem('kec_user') || 'null');
+                if (!kecToken || !kecUser) { window.location.href = 'login.html'; }
+                var appData = { allArticles: [], currentTab: 'executive', filters: { sbu: 'All', competitor: 'All', category: 'All', period: 'All' }, isLoading: false, currentPage: 1, pageSize: 20 };
         var COMPETITOR_ALIAS_MAP = {
             'larsen & toubro': 'L&T', 'larsen and toubro': 'L&T', 'l&t ltd': 'L&T', 'l&t limited': 'L&T', 'l&t construction': 'L&T', 'l&t power': 'L&T', 'l&t metro': 'L&T', 'l&t': 'L&T',
             'tata projects ltd': 'Tata Projects', 'tata projects limited': 'Tata Projects', 'tata projects': 'Tata Projects',
@@ -221,12 +248,34 @@
             return cutoff;
         }
         
-        function initApp() { loadDataFromAPI(); }
+        function initApp() {
+            var toolbar = document.querySelector('.toolbar');
+            if (toolbar && kecUser) {
+                var badge = document.createElement('div');
+                badge.style.cssText = 'display:flex;align-items:center;gap:8px;margin-right:auto;';
+                badge.innerHTML = '<span style="font-size:13px;font-weight:600;color:var(--navy);">' + kecUser.name + '</span>' +
+                    '<span style="font-size:11px;color:var(--text-secondary);background:var(--blue-pale);padding:3px 10px;border-radius:12px;border:1px solid var(--blue-border);">' + kecUser.sbu_profile + '</span>' +
+                    '<button onclick="doLogout()" style="padding:6px 14px;background:transparent;border:1.5px solid var(--champagne-silt);border-radius:6px;font-size:12px;font-weight:600;color:var(--text-secondary);cursor:pointer;font-family:Montserrat,sans-serif;">Sign Out</button>';
+                toolbar.insertBefore(badge, toolbar.firstChild);
+            }
+            if (kecUser && kecUser.is_admin) {
+                var adminBtn = document.getElementById('adminTabBtn');
+                if (adminBtn) adminBtn.style.display = 'inline-block';
+            }
+            loadDataFromAPI();
+        }
+        function doLogout() {
+            if (kecToken) { fetch(LOCAL_API + '/api/auth/logout?token=' + kecToken, { method: 'POST' }).catch(function(){}); }
+            localStorage.removeItem('kec_token');
+            localStorage.removeItem('kec_user');
+            window.location.href = 'login.html';
+        }
         
         async function loadDataFromAPI() {
             try {
                 appData.isLoading = true;
-                var response = await fetch(API_BASE_URL + '/api/data');
+                var url = (kecToken && kecUser) ? LOCAL_API + '/api/data/profile?token=' + kecToken : API_BASE_URL + '/api/data';
+                                var response = await fetch(url);
                 if (!response.ok) throw new Error('API Error: ' + response.status);
                 var result = await response.json();
                 if (result.status === 'success' && result.data) {
@@ -297,14 +346,17 @@
             btns.forEach(function(btn) { btn.classList.remove('active'); });
             btns.forEach(function(btn) {
                 if (tabName === 'executive' && btn.textContent.indexOf('Executive') !== -1) btn.classList.add('active');
-                if (tabName === 'competitor' && btn.textContent.indexOf('Competitor') !== -1) btn.classList.add('active');
-                if (tabName === 'industry' && btn.textContent.indexOf('Industry') !== -1) btn.classList.add('active');
+                                if (tabName === 'competitor' && btn.textContent.indexOf('Competitor') !== -1) btn.classList.add('active');
+                                if (tabName === 'industry' && btn.textContent.indexOf('Industry') !== -1) btn.classList.add('active');
+                                if (tabName === 'admin' && btn.textContent.indexOf('Admin') !== -1) btn.classList.add('active');
             });
             var c = document.getElementById('contentArea');
             if (appData.allArticles.length === 0) { c.innerHTML = renderEmptyState(); return; }
             if (tabName === 'executive') c.innerHTML = renderExecutiveSummary();
             else if (tabName === 'competitor') { c.innerHTML = renderCompetitorView(); setupFilterHandlers(); }
             else if (tabName === 'industry') c.innerHTML = renderIndustryView();
+            else if (tabName === 'assign') c.innerHTML = renderAssignTab();
+            else if (tabName === 'admin') { c.innerHTML = renderAdminTab(); loadUsers(); }
         }
         
         var CATEGORY_ORDER = [
@@ -577,7 +629,294 @@ grouped[cat].forEach(function(article) {
         
         function groupByCategory(articles) { var g = {}; articles.forEach(function(a) { var c = a.category || 'General'; if (!g[c]) g[c] = []; g[c].push(a); }); return g; }
         function renderEmptyState() { return '<div class="empty-state"><div class="empty-state-icon">&#128202;</div><h3>No Data Available</h3><p>The database is currently empty. Data will appear here once your scraping pipeline populates the database.</p><button class="retry-btn" onclick="loadDataFromAPI()" style="margin-top:20px;">Refresh Data</button></div>'; }
-        document.addEventListener('DOMContentLoaded', initApp);
+        // ─── ASSIGN ACTIONS TAB ───────────────────────────────────────────────────────
+
+var LOCAL_API = 'http://127.0.0.1:8000';
+var ACTIONABLE_CATEGORIES = ['order wins','bidding activity','project execution','mergers & acquisitions','partnerships & alliances','regulatory & policy','capacity expansion','new market entry'];
+var assignPickerState = {};
+
+function renderAssignTab() {
+    var actionable = appData.allArticles.filter(function(a) {
+        var cat = (a.category || '').toLowerCase();
+        return ACTIONABLE_CATEGORIES.indexOf(cat) !== -1;
+    });
+
+    var sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    actionable = actionable.filter(function(a) { return new Date(a.date) >= sevenDaysAgo; });
+    actionable.sort(function(a, b) { return b.rankScore - a.rankScore; });
+
+    if (actionable.length === 0) {
+        return '<div class="empty-state"><div class="empty-state-icon">✅</div><h3>No Actionable Items This Week</h3><p>No articles in actionable categories from the last 7 days.</p></div>';
+    }
+
+    var html = '<div class="manager-input-wrap">';
+    html += '<label>Your Email (Manager):</label>';
+    html += '<input type="email" id="managerEmail" class="picker-input" style="max-width:300px;" placeholder="your.email@company.com">';
+    html += '</div>';
+
+    html += '<table class="assign-table"><thead><tr>';
+    html += '<th style="width:35%">Article</th>';
+    html += '<th style="width:15%">Category</th>';
+    html += '<th style="width:20%">Competitor</th>';
+    html += '<th style="width:30%">Assign To</th>';
+    html += '</tr></thead><tbody>';
+
+    actionable.forEach(function(article, idx) {
+        var pickerId = 'picker_' + idx;
+        assignPickerState[pickerId] = { article: article, selected: null };
+
+        var d = new Date(article.date);
+        var fd = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        var competitors = article.competitors.join(', ') || '—';
+
+        html += '<tr>';
+        html += '<td><a href="' + article.link + '" target="_blank" style="color:var(--navy);font-weight:600;text-decoration:none;line-height:1.4;">' + article.title + '</a><div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">' + fd + '</div></td>';
+        html += '<td><span class="category-badge">' + article.category + '</span></td>';
+        html += '<td style="color:var(--text-secondary);">' + competitors + '</td>';
+        html += '<td><div class="picker-wrap" id="wrap_' + pickerId + '">';
+        html += '<input type="text" class="picker-input" id="input_' + pickerId + '" placeholder="Type a name..." autocomplete="off" oninput="onPickerInput(this, \'' + pickerId + '\')" onfocus="onPickerFocus(this, \'' + pickerId + '\')">';
+        html += '<div class="picker-dropdown" id="drop_' + pickerId + '"></div>';
+        html += '</div></td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    html += '<button class="assign-send-btn" onclick="sendAssignments()">Send Assignment Emails</button>';
+    html += '<div class="assign-success" id="assignSuccess">✅ Emails sent successfully! Team members will receive their assignments shortly.</div>';
+
+    return html;
+}
+
+var pickerDebounceTimer = null;
+
+function onPickerInput(input, pickerId) {
+    var q = input.value.trim();
+    assignPickerState[pickerId].selected = null;
+
+    clearTimeout(pickerDebounceTimer);
+    if (q.length < 2) { closeDropdown(pickerId); return; }
+
+    pickerDebounceTimer = setTimeout(function() {
+        fetch(LOCAL_API + '/api/people/search?q=' + encodeURIComponent(q))
+            .then(function(r) { return r.json(); })
+            .then(function(data) { renderDropdown(pickerId, data.people || []); })
+            .catch(function() { closeDropdown(pickerId); });
+    }, 200);
+}
+
+function onPickerFocus(input, pickerId) {
+    if (input.value.trim().length >= 2) onPickerInput(input, pickerId);
+}
+
+function renderDropdown(pickerId, people) {
+    var drop = document.getElementById('drop_' + pickerId);
+    if (!drop) return;
+    if (people.length === 0) { drop.innerHTML = '<div class="picker-option" style="color:var(--text-secondary);">No results found</div>'; drop.classList.add('open'); return; }
+    drop.innerHTML = people.map(function(p) {
+        return '<div class="picker-option" onclick="selectPerson(\'' + pickerId + '\', ' + JSON.stringify(p).replace(/"/g, '&quot;') + ')">' +
+            '<div>' + p.name + '</div>' +
+            '<div class="opt-role">' + (p.role || '') + ' · ' + (p.sbu || '') + '</div>' +
+            '</div>';
+    }).join('');
+    drop.classList.add('open');
+}
+
+function selectPerson(pickerId, person) {
+    assignPickerState[pickerId].selected = person;
+    document.getElementById('input_' + pickerId).value = person.name + ' (' + person.email + ')';
+    closeDropdown(pickerId);
+}
+
+function closeDropdown(pickerId) {
+    var drop = document.getElementById('drop_' + pickerId);
+    if (drop) drop.classList.remove('open');
+}
+
+document.addEventListener('click', function(e) {
+    Object.keys(assignPickerState).forEach(function(pickerId) {
+        var wrap = document.getElementById('wrap_' + pickerId);
+        if (wrap && !wrap.contains(e.target)) closeDropdown(pickerId);
+    });
+});
+
+async function sendAssignments() {
+    var managerEmail = document.getElementById('managerEmail').value.trim();
+    if (!managerEmail) { alert('Please enter your email address first.'); return; }
+
+    var assignments = [];
+    Object.keys(assignPickerState).forEach(function(pickerId) {
+        var state = assignPickerState[pickerId];
+        if (state.selected) {
+            assignments.push({
+                article_id: state.article.id || 0,
+                assigned_by_email: managerEmail,
+                assigned_to_email: state.selected.email,
+                assigned_to_name: state.selected.name,
+                notes: ''
+            });
+        }
+    });
+
+    if (assignments.length === 0) { alert('Please assign at least one article before sending.'); return; }
+
+    var btn = document.querySelector('.assign-send-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    try {
+        var response = await fetch(LOCAL_API + '/api/assignments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ assignments: assignments })
+        });
+        var result = await response.json();
+        if (result.status === 'success') {
+            document.getElementById('assignSuccess').style.display = 'block';
+            btn.textContent = '✅ Sent!';
+        }
+    } catch (e) {
+        alert('Error saving assignments: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = 'Send Assignment Emails';
+    }
+}
+// ─── ADMIN TAB ────────────────────────────────────────────────────────────────
+
+var SBU_PROFILES = ['Intl T&D','India T&D','Civil','Transportation','Renewables','Oil & Gas','Admin'];
+
+function renderAdminTab() {
+    return '<div style="max-width:1100px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">' +
+        '<h2 style="font-family:Playfair Display,serif;font-size:28px;color:var(--navy);">User Management</h2>' +
+        '<button onclick="showAddUserForm()" style="background:var(--navy);color:white;border:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">+ Add User</button>' +
+        '</div>' +
+        '<div id="userFormWrap"></div>' +
+        '<div id="usersTableWrap"><div style="text-align:center;padding:40px;color:var(--text-secondary);">Loading users...</div></div>' +
+        '</div>';
+}
+
+function showAddUserForm(user) {
+    var isEdit = !!user;
+    var html = '<div style="background:white;border:1px solid var(--champagne-silt);border-radius:8px;padding:24px;margin-bottom:24px;box-shadow:0 4px 20px rgba(0,0,0,0.06);">' +
+        '<h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:20px;">' + (isEdit ? 'Edit User' : 'Add New User') + '</h3>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">' +
+        '<div><label style="font-size:12px;font-weight:600;color:var(--text-body);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Full Name</label>' +
+        '<input id="formName" class="picker-input" value="' + (user ? user.name : '') + '" placeholder="Full name"></div>' +
+        '<div><label style="font-size:12px;font-weight:600;color:var(--text-body);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Email</label>' +
+        '<input id="formEmail" class="picker-input" type="email" value="' + (user ? user.email : '') + '" placeholder="email@kecrpg.com"></div>' +
+        '<div style="display:none;"><input id="formPassword" class="picker-input" type="password"></div>' +
+        '<div><label style="font-size:12px;font-weight:600;color:var(--text-body);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">SBU Profile</label>' +
+        '<select id="formSbu" class="filter-select">' +
+        SBU_PROFILES.map(function(p) { return '<option value="' + p + '"' + (user && user.sbu_profile === p ? ' selected' : '') + '>' + p + '</option>'; }).join('') +
+        '</select></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:12px;margin-top:20px;">' +
+        '<button onclick="saveUser(' + (isEdit ? user.id : 'null') + ')" style="background:var(--navy);color:white;border:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">' + (isEdit ? 'Save Changes' : 'Create User') + '</button>' +
+        '<button onclick="document.getElementById(\'userFormWrap\').innerHTML=\'\'" style="background:transparent;color:var(--text-secondary);border:1.5px solid var(--champagne-silt);padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">Cancel</button>' +
+        '</div>' +
+        '</div>';
+    document.getElementById('userFormWrap').innerHTML = html;
+}
+
+async function saveUser(userId) {
+    var name = document.getElementById('formName').value.trim();
+    var email = document.getElementById('formEmail').value.trim();
+    var password = document.getElementById('formPassword').value;
+    var sbu = document.getElementById('formSbu').value;
+
+    if (!name || !email) { alert('Name and email are required.'); return; }
+    // Password not required
+
+    try {
+        var url = userId ? LOCAL_API + '/api/auth/users/' + userId + '?token=' + kecToken : LOCAL_API + '/api/auth/create-user';
+        var method = userId ? 'PUT' : 'POST';
+        var body = { name: name, email: email, sbu_profile: sbu, is_admin: sbu === 'Admin' };
+        if (password) body.password = password;
+
+        var response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        var result = await response.json();
+        if (result.status === 'success') {
+            document.getElementById('userFormWrap').innerHTML = '';
+            loadUsers();
+        } else {
+            alert('Error: ' + (result.detail || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function loadUsers() {
+    try {
+        var response = await fetch(LOCAL_API + '/api/auth/users?token=' + kecToken);
+        var result = await response.json();
+        if (result.status === 'success') {
+            renderUsersTable(result.users);
+        }
+    } catch (e) {
+        document.getElementById('usersTableWrap').innerHTML = '<div style="color:red;padding:20px;">Error loading users: ' + e.message + '</div>';
+    }
+}
+
+function renderUsersTable(users) {
+    var SBU_COLORS = {
+        'Intl T&D':     '#E3F2FD', 'India T&D':    '#E8F5E9',
+        'Civil':        '#FFF8E1', 'Transportation':'#F3E5F5',
+        'Renewables':   '#E0F7FA', 'Oil & Gas':     '#FBE9E7',
+        'Admin':        '#0F2B4C'
+    };
+    var SBU_TEXT = { 'Admin': '#FFFFFF' };
+
+    var html = '<table style="width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.04);">' +
+        '<thead><tr style="background:var(--navy);">' +
+        '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Name</th>' +
+        '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Email</th>' +
+        '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">SBU Profile</th>' +
+        '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Status</th>' +
+        '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Last Login</th>' +
+        '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Actions</th>' +
+        '</tr></thead><tbody>';
+
+    users.forEach(function(user, i) {
+        var shade = i % 2 === 0 ? '#FFFFFF' : '#F9F8F3';
+        var sbuColor = SBU_COLORS[user.sbu_profile] || '#E5E2D0';
+        var sbuText = SBU_TEXT[user.sbu_profile] || '#333333';
+        var lastLogin = user.last_login ? new Date(user.last_login).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : 'Never';
+
+        html += '<tr style="background:' + shade + ';">' +
+            '<td style="padding:14px 16px;font-size:14px;font-weight:600;color:var(--navy);font-family:Montserrat,sans-serif;">' + user.name + '</td>' +
+            '<td style="padding:14px 16px;font-size:13px;color:var(--text-secondary);font-family:Montserrat,sans-serif;">' + user.email + '</td>' +
+            '<td style="padding:14px 16px;"><span style="background:' + sbuColor + ';color:' + sbuText + ';padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;font-family:Montserrat,sans-serif;">' + user.sbu_profile + '</span></td>' +
+            '<td style="padding:14px 16px;"><span style="background:' + (user.is_active ? '#E8F5E9' : '#FFEBEE') + ';color:' + (user.is_active ? '#1B5E20' : '#B71C1C') + ';padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;font-family:Montserrat,sans-serif;">' + (user.is_active ? 'Active' : 'Inactive') + '</span></td>' +
+            '<td style="padding:14px 16px;font-size:13px;color:var(--text-secondary);font-family:Montserrat,sans-serif;">' + lastLogin + '</td>' +
+            '<td style="padding:14px 16px;display:flex;gap:8px;">' +
+            '<button onclick="showAddUserForm(' + JSON.stringify(user).replace(/"/g, '&quot;') + ')" style="background:transparent;border:1.5px solid var(--champagne-silt);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer;font-family:Montserrat,sans-serif;">Edit</button>' +
+            (user.is_active && user.email !== kecUser.email ?
+                '<button onclick="deactivateUser(' + user.id + ')" style="background:transparent;border:1.5px solid #FFCDD2;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:#C62828;cursor:pointer;font-family:Montserrat,sans-serif;">Deactivate</button>' : '') +
+            '</td></tr>';
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('usersTableWrap').innerHTML = html;
+}
+
+async function deactivateUser(userId) {
+    if (!confirm('Deactivate this user? They will no longer be able to log in.')) return;
+    try {
+        var response = await fetch(LOCAL_API + '/api/auth/users/' + userId + '?token=' + kecToken, { method: 'DELETE' });
+        var result = await response.json();
+        if (result.status === 'success') loadUsers();
+        else alert('Error: ' + result.detail);
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}        
+document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
