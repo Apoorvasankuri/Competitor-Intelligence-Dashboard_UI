@@ -124,6 +124,12 @@
                     <span style="padding:14px 16px;background:var(--champagne-silt);border:1.5px solid var(--champagne-silt);border-radius:0 6px 6px 0;font-size:13px;color:var(--text-secondary);white-space:nowrap;font-family:'Montserrat',sans-serif;">@kecrpg.com</span>
                 </div>
             </div>
+            <div class="form-group" id="passwordGroup" style="display:none;">
+                <label for="password">Password</label>
+                <input type="password" id="password" class="form-input"
+                       placeholder="Enter your password"
+                       onkeydown="if(event.key==='Enter') doLogin()">
+            </div>
             <button class="login-btn" id="loginBtn" onclick="doLogin()">
                 Sign In
             </button>
@@ -151,7 +157,15 @@
                 })
                 .catch(function() {});
         }
-
+        function checkAdminEmail() {
+    var email = document.getElementById('email').value.trim().toLowerCase();
+    var passwordGroup = document.getElementById('passwordGroup');
+    if (email === 'sankuria' || email === 'sankuria@kecrpg.com') {
+        passwordGroup.style.display = 'block';
+    } else {
+        passwordGroup.style.display = 'none';
+    }
+}
         async function doLogin() {
             var email = document.getElementById('email').value.trim();
             var btn = document.getElementById('loginBtn');
@@ -170,7 +184,7 @@
                 var response = await fetch(LOCAL_API + '/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, password: '' })
+                    body: JSON.stringify({ email: email, password: document.getElementById('password').value || '' })
                 });
 
                 var data = await response.json();
