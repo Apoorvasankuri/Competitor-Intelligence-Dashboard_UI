@@ -186,7 +186,9 @@
     </div>
     <script>
         var API_BASE_URL = 'https://competitor-intelligence-dashboard.onrender.com';
-                var LOCAL_API = 'http://127.0.0.1:8000';
+                var LOCAL_API = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' 
+                    ? 'http://127.0.0.1:8000' 
+                    : 'https://competitor-intelligence-dashboard.onrender.com';
                 var kecToken = localStorage.getItem('kec_token');
                 var kecUser = JSON.parse(localStorage.getItem('kec_user') || 'null');
                 if (!kecToken || !kecUser) { window.location.href = 'login.html'; }

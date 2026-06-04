@@ -140,7 +140,9 @@
     </div>
 
     <script>
-        var LOCAL_API = 'http://127.0.0.1:8000';
+        var LOCAL_API = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' 
+            ? 'http://127.0.0.1:8000' 
+            : 'https://competitor-intelligence-dashboard.onrender.com';
 
         // If already logged in, redirect to dashboard
         var existingToken = localStorage.getItem('kec_token');
