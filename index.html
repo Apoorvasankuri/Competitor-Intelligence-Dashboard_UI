@@ -981,12 +981,35 @@ async function deactivateUser(userId) {
     } catch (e) {
         alert('Error: ' + e.message);
     }
-}        
+}
+
+async function activateUser(userId) {
+    try {
+        var response = await fetch(LOCAL_API + '/api/auth/users/' + userId + '/activate?token=' + kecToken, { method: 'PUT' });
+        var result = await response.json();
+        if (result.status === 'success') loadUsers();
+        else alert('Error: ' + result.detail);
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function deleteUser(userId, userName) {
+    if (!confirm('Permanently delete ' + userName + '? This cannot be undone.')) return;
+    try {
+        var response = await fetch(LOCAL_API + '/api/auth/users/' + userId + '/delete?token=' + kecToken, { method: 'DELETE' });
+        var result = await response.json();
+        if (result.status === 'success') loadUsers();
+        else alert('Error: ' + result.detail);
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
-async function activateUser(userId) {
     try {
         var response = await fetch(LOCAL_API + '/api/auth/users/' + userId + '/activate?token=' + kecToken, { method: 'PUT' });
         var result = await response.json();
