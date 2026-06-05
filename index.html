@@ -633,7 +633,7 @@ grouped[cat].forEach(function(article) {
         function renderEmptyState() { return '<div class="empty-state"><div class="empty-state-icon">&#128202;</div><h3>No Data Available</h3><p>The database is currently empty. Data will appear here once your scraping pipeline populates the database.</p><button class="retry-btn" onclick="loadDataFromAPI()" style="margin-top:20px;">Refresh Data</button></div>'; }
         // ─── ASSIGN ACTIONS TAB ───────────────────────────────────────────────────────
 
-var LOCAL_API = 'http://127.0.0.1:8000';
+var LOCAL_API = 'https://competitor-intelligence-dashboard.onrender.com';
 var ACTIONABLE_CATEGORIES = ['order wins','bidding activity','project execution','mergers & acquisitions','partnerships & alliances','regulatory & policy','capacity expansion','new market entry'];
 var assignPickerState = {};
 
