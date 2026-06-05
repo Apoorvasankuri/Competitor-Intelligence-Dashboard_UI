@@ -898,8 +898,12 @@ function renderUsersTable(users) {
             '<td style="padding:14px 16px;font-size:13px;color:var(--text-secondary);font-family:Montserrat,sans-serif;">' + lastLogin + '</td>' +
             '<td style="padding:14px 16px;display:flex;gap:8px;">' +
             '<button onclick="showAddUserForm(' + JSON.stringify(user).replace(/"/g, '&quot;') + ')" style="background:transparent;border:1.5px solid var(--champagne-silt);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer;font-family:Montserrat,sans-serif;">Edit</button>' +
-            (user.is_active && user.email !== kecUser.email ?
-                '<button onclick="deactivateUser(' + user.id + ')" style="background:transparent;border:1.5px solid #FFCDD2;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:#C62828;cursor:pointer;font-family:Montserrat,sans-serif;">Deactivate</button>' : '') +
+            (user.email !== kecUser.email ? (
+                user.is_active ?
+                '<button onclick="deactivateUser(' + user.id + ')" style="background:transparent;border:1.5px solid #FFCDD2;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:#C62828;cursor:pointer;font-family:Montserrat,sans-serif;">Deactivate</button>' :
+                '<button onclick="activateUser(' + user.id + ')" style="background:transparent;border:1.5px solid #C3E6CB;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:#1B5E20;cursor:pointer;font-family:Montserrat,sans-serif;">Activate</button>' +
+                '<button onclick="deleteUser(' + user.id + ', \'' + user.name + '\')" style="background:transparent;border:1.5px solid #FFCDD2;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:#C62828;cursor:pointer;font-family:Montserrat,sans-serif;">Delete</button>'
+            ) : '') +
             '</td></tr>';
     });
 
@@ -922,3 +926,25 @@ document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
+async function activateUser(userId) {
+    try {
+        var response = await fetch(LOCAL_API + '/api/auth/users/' + userId + '/activate?token=' + kecToken, { method: 'PUT' });
+        var result = await response.json();
+        if (result.status === 'success') loadUsers();
+        else alert('Error: ' + result.detail);
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function deleteUser(userId, userName) {
+    if (!confirm('Permanently delete ' + userName + '? This cannot be undone.')) return;
+    try {
+        var response = await fetch(LOCAL_API + '/api/auth/users/' + userId + '/delete?token=' + kecToken, { method: 'DELETE' });
+        var result = await response.json();
+        if (result.status === 'success') loadUsers();
+        else alert('Error: ' + result.detail);
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
