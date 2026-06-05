@@ -800,40 +800,82 @@ function renderAdminTab() {
 
 function showAddUserForm(user) {
     var isEdit = !!user;
+    
+    // Parse existing BUs if editing a user. Assumes comma-separated string from backend (e.g., "Civil, Renewables")
+    var userBUs = [];
+    if (user && user.sbu_profile) {
+        userBUs = user.sbu_profile.split(',').map(function(s) { return s.trim(); });
+    }
+    
     var html = '<div style="background:white;border:1px solid var(--champagne-silt);border-radius:8px;padding:24px;margin-bottom:24px;box-shadow:0 4px 20px rgba(0,0,0,0.06);">' +
-        '<h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:20px;">' + (isEdit ? 'Edit User' : 'Add New User') + '</h3>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">' +
+        '<h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:20px;">' + (isEdit ? 'Edit User & Storyline Permissions' : 'Add New User & Storyline Permissions') + '</h3>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom: 20px;">' +
         '<div><label style="font-size:12px;font-weight:600;color:var(--text-body);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Full Name</label>' +
         '<input id="formName" class="picker-input" value="' + (user ? user.name : '') + '" placeholder="Full name"></div>' +
         '<div><label style="font-size:12px;font-weight:600;color:var(--text-body);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Email</label>' +
         '<input id="formEmail" class="picker-input" type="email" value="' + (user ? user.email : '') + '" placeholder="email@kecrpg.com"></div>' +
         '<div style="display:none;"><input id="formPassword" class="picker-input" type="password"></div>' +
-        '<div><label style="font-size:12px;font-weight:600;color:var(--text-body);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">SBU Profile</label>' +
-        '<select id="formSbu" class="filter-select">' +
-        SBU_PROFILES.map(function(p) { return '<option value="' + p + '"' + (user && user.sbu_profile === p ? ' selected' : '') + '>' + p + '</option>'; }).join('') +
-        '</select></div>' +
         '</div>' +
-        '<div style="display:flex;gap:12px;margin-top:20px;">' +
+        
+        // NEW: Multi-Select options for assigned Business Units (Max 3-4 recommended)
+        '<div style="margin-bottom: 20px;">' +
+        '<label style="font-size:12px;font-weight:600;color:var(--navy);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Assigned Business Units / Storylines <span style="text-transform:none;color:var(--text-secondary); font-weight:normal;">(Select 1 to 4 options)</span></label>' +
+        '<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; background: var(--ivory-linen); padding: 16px; border-radius: 6px; border: 1px solid var(--champagne-silt);">' +
+        SBU_PROFILES.map(function(p) { 
+            var isChecked = userBUs.indexOf(p) !== -1 ? ' checked' : '';
+            return '<label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:500; color:var(--text-body); cursor:pointer;">' +
+                   '<input type="checkbox" class="bu-checkbox" value="' + p + '"' + isChecked + ' style="width:16px; height:16px; accent-color:var(--navy);"> ' + p + 
+                   '</label>'; 
+        }).join('') +
+        '</div>' +
+        '</div>' +
+
+        // NEW: Separate Global Admin toggle
+        '<div style="margin-bottom: 20px;">' +
+        '<label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--navy); cursor:pointer;">' +
+        '<input type="checkbox" id="formIsAdmin" ' + (user && user.is_admin ? 'checked' : '') + ' style="width:16px; height:16px; accent-color:var(--navy);"> Give System-Wide Admin Access' +
+        '</label>' +
+        '</div>' +
+
+        '<div style="display:flex; gap:12px; margin-top:20px;">' +
         '<button onclick="saveUser(' + (isEdit ? user.id : 'null') + ')" style="background:var(--navy);color:white;border:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">' + (isEdit ? 'Save Changes' : 'Create User') + '</button>' +
         '<button onclick="document.getElementById(\'userFormWrap\').innerHTML=\'\'" style="background:transparent;color:var(--text-secondary);border:1.5px solid var(--champagne-silt);padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">Cancel</button>' +
         '</div>' +
         '</div>';
-    document.getElementById('userFormWrap').innerHTML = html;
+    document.getElementById('userFormWrap').innerHTML = html
 }
 
 async function saveUser(userId) {
-    var name = document.getElementById('formName').value.trim();
+   var name = document.getElementById('formName').value.trim();
     var email = document.getElementById('formEmail').value.trim();
     var password = document.getElementById('formPassword').value;
-    var sbu = document.getElementById('formSbu').value;
+    var isAdmin = document.getElementById('formIsAdmin').checked;
+
+    // Gather all selected Business Unit choices from checkboxes
+    var selectedBUs = [];
+    var checkboxes = document.querySelectorAll('.bu-checkbox:checked');
+    checkboxes.forEach(function(cb) {
+        selectedBUs.push(cb.value);
+    });
 
     if (!name || !email) { alert('Name and email are required.'); return; }
-    // Password not required
+    
+    // UI Validation reminder constraint
+    if (selectedBUs.length === 0 && !isAdmin) { 
+        alert('Please assign at least 1 Business Unit storyline or set as Admin.'); 
+        return; 
+    }
+    if (selectedBUs.length > 4) {
+        alert('You selected ' + selectedBUs.length + ' units. It is highly recommended to limit a person to 3-4 options for clarity.');
+    }
+
+    // Join choices into a string ("India T&D, Civil, Renewables") expected by database profile structure
+    var sbuProfileString = isAdmin && selectedBUs.length === 0 ? 'Admin' : selectedBUs.join(', ');
 
     try {
         var url = userId ? LOCAL_API + '/api/auth/users/' + userId + '?token=' + kecToken : LOCAL_API + '/api/auth/create-user';
         var method = userId ? 'PUT' : 'POST';
-        var body = { name: name, email: email, sbu_profile: sbu, is_admin: sbu === 'Admin' };
+        var body = { name: name, email: email, sbu_profile: sbuProfileString, is_admin: isAdmin };
         if (password) body.password = password;
 
         var response = await fetch(url, {
@@ -878,7 +920,7 @@ function renderUsersTable(users) {
         '<thead><tr style="background:var(--navy);">' +
         '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Name</th>' +
         '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Email</th>' +
-        '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">SBU Profile</th>' +
+        '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Assigned Storylines (BUs)</th>' +
         '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Status</th>' +
         '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Last Login</th>' +
         '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Actions</th>' +
@@ -886,14 +928,32 @@ function renderUsersTable(users) {
 
     users.forEach(function(user, i) {
         var shade = i % 2 === 0 ? '#FFFFFF' : '#F9F8F3';
-        var sbuColor = SBU_COLORS[user.sbu_profile] || '#E5E2D0';
-        var sbuText = SBU_TEXT[user.sbu_profile] || '#333333';
         var lastLogin = user.last_login ? new Date(user.last_login).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : 'Never';
+
+        // Split individual items to render them uniquely as multiple sub-badges
+        var profileItems = user.sbu_profile ? user.sbu_profile.split(',') : [];
+        var badgesHtml = '<div style="display:flex; flex-wrap:wrap; gap:6px;">';
+        
+        if (user.is_admin) {
+            badgesHtml += '<span style="background:#0F2B4C;color:#FFFFFF;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;font-family:Montserrat,sans-serif;text-transform:uppercase;">Admin Override</span>';
+        }
+        
+        profileItems.forEach(function(item) {
+            var cleanItem = item.trim();
+            if(!cleanItem || cleanItem === 'Admin') return;
+            var sbuColor = SBU_COLORS[cleanItem] || '#E5E2D0';
+            var sbuText = SBU_TEXT[cleanItem] || '#333333';
+            badgesHtml += '<span style="background:' + sbuColor + ';color:' + sbuText + ';padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;font-family:Montserrat,sans-serif;">' + cleanItem + '</span>';
+        });
+        if(profileItems.length === 0 && !user.is_admin) {
+            badgesHtml += '<span style="color:var(--text-secondary); font-style:italic;">No Storylines</span>';
+        }
+        badgesHtml += '</div>';
 
         html += '<tr style="background:' + shade + ';">' +
             '<td style="padding:14px 16px;font-size:14px;font-weight:600;color:var(--navy);font-family:Montserrat,sans-serif;">' + user.name + '</td>' +
             '<td style="padding:14px 16px;font-size:13px;color:var(--text-secondary);font-family:Montserrat,sans-serif;">' + user.email + '</td>' +
-            '<td style="padding:14px 16px;"><span style="background:' + sbuColor + ';color:' + sbuText + ';padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;font-family:Montserrat,sans-serif;">' + user.sbu_profile + '</span></td>' +
+            '<td style="padding:14px 16px;">' + badgesHtml + '</td>' +
             '<td style="padding:14px 16px;"><span style="background:' + (user.is_active ? '#E8F5E9' : '#FFEBEE') + ';color:' + (user.is_active ? '#1B5E20' : '#B71C1C') + ';padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;font-family:Montserrat,sans-serif;">' + (user.is_active ? 'Active' : 'Inactive') + '</span></td>' +
             '<td style="padding:14px 16px;font-size:13px;color:var(--text-secondary);font-family:Montserrat,sans-serif;">' + lastLogin + '</td>' +
             '<td style="padding:14px 16px;display:flex;gap:8px;">' +
