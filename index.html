@@ -791,7 +791,10 @@ function renderAdminTab() {
     return '<div style="max-width:1100px;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">' +
         '<h2 style="font-family:Playfair Display,serif;font-size:28px;color:var(--navy);">User Management</h2>' +
+        '<div style="display:flex;gap:12px;">' +
         '<button onclick="showAddUserForm()" style="background:var(--navy);color:white;border:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">+ Add User</button>' +
+        '<button onclick="sendWeeklyDigest()" id="digestBtn" style="background:var(--gold-accent);color:white;border:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">📧 Send Weekly Digest</button>' +
+        '</div>' +
         '</div>' +
         '<div id="userFormWrap"></div>' +
         '<div id="usersTableWrap"><div style="text-align:center;padding:40px;color:var(--text-secondary);">Loading users...</div></div>' +
@@ -1005,7 +1008,28 @@ async function deleteUser(userId, userName) {
         alert('Error: ' + e.message);
     }
 }
-
+async function sendWeeklyDigest() {
+    var btn = document.getElementById('digestBtn');
+    if (!confirm('Send weekly digest emails to all active users now?')) return;
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    try {
+        var response = await fetch(LOCAL_API + '/api/send-digest?token=' + kecToken, { method: 'POST' });
+        var result = await response.json();
+        if (result.status === 'success') {
+            alert('✅ Digest sent!\n\nSent: ' + result.sent + '\nSkipped: ' + result.skipped + '\nFailed: ' + result.failed);
+            btn.textContent = '✅ Sent!';
+        } else {
+            alert('Error: ' + (result.detail || 'Unknown error'));
+            btn.disabled = false;
+            btn.textContent = '📧 Send Weekly Digest';
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = '📧 Send Weekly Digest';
+    }
+}
 document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
