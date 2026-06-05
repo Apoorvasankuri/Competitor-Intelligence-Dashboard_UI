@@ -962,7 +962,7 @@ function renderUsersTable(users) {
                 user.is_active ?
                 '<button onclick="deactivateUser(' + user.id + ')" style="background:transparent;border:1.5px solid #FFCDD2;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:#C62828;cursor:pointer;font-family:Montserrat,sans-serif;">Deactivate</button>' :
                 '<button onclick="activateUser(' + user.id + ')" style="background:transparent;border:1.5px solid #C3E6CB;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:#1B5E20;cursor:pointer;font-family:Montserrat,sans-serif;">Activate</button>' +
-                '<button onclick="deleteUser(' + user.id + ', \'' + user.name + '\')" style="background:transparent;border:1.5px solid #FFCDD2;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:#C62828;cursor:pointer;font-family:Montserrat,sans-serif;">Delete</button>'
+                '<button onclick="deleteUser(' + user.id + ', \'' + user.name.replace(/\'/g, "\\'") + '\')" style="background:transparent;border:1.5px solid #FFCDD2;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:#C62828;cursor:pointer;font-family:Montserrat,sans-serif;">Delete</button>'
             ) : '') +
             '</td></tr>';
     });
@@ -1010,24 +1010,4 @@ document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
-    try {
-        var response = await fetch(LOCAL_API + '/api/auth/users/' + userId + '/activate?token=' + kecToken, { method: 'PUT' });
-        var result = await response.json();
-        if (result.status === 'success') loadUsers();
-        else alert('Error: ' + result.detail);
-    } catch (e) {
-        alert('Error: ' + e.message);
-    }
-}
-
-async function deleteUser(userId, userName) {
-    if (!confirm('Permanently delete ' + userName + '? This cannot be undone.')) return;
-    try {
-        var response = await fetch(LOCAL_API + '/api/auth/users/' + userId + '/delete?token=' + kecToken, { method: 'DELETE' });
-        var result = await response.json();
-        if (result.status === 'success') loadUsers();
-        else alert('Error: ' + result.detail);
-    } catch (e) {
-        alert('Error: ' + e.message);
-    }
-}
+    
