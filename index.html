@@ -1321,7 +1321,7 @@ document.addEventListener('DOMContentLoaded', initApp);
         addMessage("bot", "Sorry, something went wrong. Please try again.");
       } else {
         const data = await res.json();
-        const reply = data.reply || "No response.";
+        const reply = data.answer || "No response.";
         addMessage("bot", reply);
         history.push({ role: "assistant", content: reply });
       }
