@@ -1310,7 +1310,6 @@ document.addEventListener('DOMContentLoaded', initApp);
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { "Authorization": `Bearer ${token}` } : {})
         },
         body: JSON.stringify({ message: msg, history: history.slice(-10), token: token })
       });
