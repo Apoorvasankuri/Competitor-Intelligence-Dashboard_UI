@@ -1051,8 +1051,9 @@ document.addEventListener('DOMContentLoaded', initApp);
     width: 400px; height: 560px;
     border-radius: 14px; display: none; flex-direction: column;
     overflow: hidden; z-index: 9998;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
     border: 1px solid rgba(55,138,221,0.2);
+    background: white;
   }
   #kec-chat-panel.open { display: flex; }
 
@@ -1069,8 +1070,8 @@ document.addEventListener('DOMContentLoaded', initApp);
     display: flex; align-items: center; justify-content: center;
     font-size: 15px; color: white;
   }
-  .kec-chat-header h3 { color: white; font-size: 13px; font-weight: 600; margin: 0; }
-  .kec-chat-header p  { color: rgba(255,255,255,0.55); font-size: 11px; margin: 0; }
+  .kec-chat-header h3 { color: white; font-size: 13px; font-weight: 600; margin: 0; font-family: 'Montserrat', sans-serif; }
+  .kec-chat-header p  { color: rgba(255,255,255,0.55); font-size: 11px; margin: 0; font-family: 'Montserrat', sans-serif; }
   .kec-chat-close {
     background: none; border: none;
     color: rgba(255,255,255,0.6); cursor: pointer;
@@ -1078,17 +1079,84 @@ document.addEventListener('DOMContentLoaded', initApp);
   }
   .kec-chat-close:hover { color: white; }
 
-  #kec-copilot-frame {
-    flex: 1; border: none; width: 100%;
+  #kec-messages {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    background: #F9F8F3;
+  }
+  .kec-bot-msg {
+    align-self: flex-start; background: white;
+    color: #333; padding: 10px 14px;
+    border-radius: 16px 16px 16px 4px;
+    border: 1px solid #E5E2D0;
+    font-size: 13px; line-height: 1.6;
+    max-width: 88%; font-family: 'Montserrat', sans-serif;
+  }
+  .kec-user-msg {
+    align-self: flex-end; background: #185FA5;
+    color: white; padding: 10px 14px;
+    border-radius: 16px 16px 4px 16px;
+    font-size: 13px; line-height: 1.6;
+    max-width: 88%; font-family: 'Montserrat', sans-serif;
+  }
+  .kec-error-msg {
+    align-self: flex-start; background: #fdecea;
+    color: #c62828; padding: 10px 14px;
+    border-radius: 16px; font-size: 13px; line-height: 1.6;
+    max-width: 88%; font-family: 'Montserrat', sans-serif;
+  }
+  .kec-typing {
+    align-self: flex-start; background: white;
+    padding: 12px 16px; border-radius: 16px 16px 16px 4px;
+    border: 1px solid #E5E2D0; display: flex; gap: 4px; align-items: center;
+  }
+  .kec-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #888; animation: kecBounce 1.2s infinite;
+  }
+  .kec-dot:nth-child(2) { animation-delay: 0.2s; }
+  .kec-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes kecBounce {
+    0%,60%,100% { transform: translateY(0); }
+    30% { transform: translateY(-5px); }
+  }
+  .kec-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .kec-chip {
+    font-size: 11px; padding: 4px 10px;
+    border-radius: 20px; border: 1px solid #185FA5;
+    color: #185FA5; cursor: pointer;
+    background: white; font-family: 'Montserrat', sans-serif;
+    font-weight: 600; transition: all 0.15s;
+  }
+  .kec-chip:hover { background: #185FA5; color: white; }
+
+  .kec-input-row {
+    display: flex; gap: 8px; padding: 12px;
+    border-top: 1px solid #E5E2D0; flex-shrink: 0;
     background: white;
   }
+  #kecChatInput {
+    flex: 1; border: 1px solid #E5E2D0; border-radius: 8px;
+    padding: 9px 12px; font-size: 13px;
+    font-family: 'Montserrat', sans-serif;
+    resize: none; outline: none; height: 38px;
+    background: #F9F8F3; color: #333;
+  }
+  #kecChatInput:focus { border-color: #185FA5; background: white; }
+  #kecSendBtn {
+    width: 38px; height: 38px; border-radius: 8px;
+    background: #185FA5; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: white; flex-shrink: 0; transition: background 0.15s;
+  }
+  #kecSendBtn:hover { background: #0C447C; }
+  #kecSendBtn:disabled { background: #E5E2D0; cursor: not-allowed; }
 </style>
 
 <!-- FAB button -->
 <button id="kec-chat-fab" aria-label="Open KEC Intel Assistant">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-       stroke="currentColor" stroke-width="2" stroke-linecap="round"
-       stroke-linejoin="round">
+       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
   </svg>
 </button>
@@ -1099,46 +1167,121 @@ document.addEventListener('DOMContentLoaded', initApp);
     <div class="kec-chat-header-left">
       <div class="kec-chat-avatar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round"
-             stroke-linejoin="round">
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
         </svg>
       </div>
       <div>
         <h3>KEC Intel Assistant</h3>
-        <p>Powered by Copilot · DB + AI</p>
+        <p>Competitor Intelligence · AI powered</p>
       </div>
     </div>
     <button class="kec-chat-close" id="kec-chat-close-btn" aria-label="Close chat">✕</button>
   </div>
 
-  <iframe
-    id="kec-copilot-frame"
-    src="https://copilotstudio.microsoft.com/environments/Default-df5e0802-a654-4327-a868-76b71fece1f5/bots/cre86_KECCompetitorIntelligence/canvas?__version__=2&enableFileAttachment=true&tenantId=df5e0802-a654-4327-a868-76b71fece1f5"
-    allow="microphone"
-    title="KEC Intel Assistant">
-  </iframe>
+  <div id="kec-messages">
+    <div class="kec-bot-msg">
+      Hello! Ask me anything about competitors, order wins, bids, or market activity.
+      <div class="kec-chip-row">
+        <span class="kec-chip" onclick="kecAskChip('Recent order wins of L&T')">L&T order wins</span>
+        <span class="kec-chip" onclick="kecAskChip('Latest bidding activity this week')">This week bids</span>
+        <span class="kec-chip" onclick="kecAskChip('Kalpataru recent news')">Kalpataru news</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="kec-input-row">
+    <textarea id="kecChatInput" placeholder="Ask about competitors, orders, bids..."
+      onkeydown="kecHandleKey(event)"></textarea>
+    <button id="kecSendBtn" onclick="kecSendMessage()" aria-label="Send">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </div>
 </div>
 
 <script>
 (function () {
-  const fab     = document.getElementById("kec-chat-fab");
-  const panel   = document.getElementById("kec-chat-panel");
-  const closeBtn = document.getElementById("kec-chat-close-btn");
+  var KEC_API = 'https://competitor-intelligence-dashboard.onrender.com/api/copilot-search';
+  var fab      = document.getElementById('kec-chat-fab');
+  var panel    = document.getElementById('kec-chat-panel');
+  var closeBtn = document.getElementById('kec-chat-close-btn');
+  var msgs     = document.getElementById('kec-messages');
+  var input    = document.getElementById('kecChatInput');
+  var sendBtn  = document.getElementById('kecSendBtn');
 
-  fab.addEventListener("click", () => {
-    panel.classList.add("open");
-    fab.style.display = "none";
+  fab.addEventListener('click', function() {
+    panel.classList.add('open');
+    fab.style.display = 'none';
+    input.focus();
+  });
+  closeBtn.addEventListener('click', function() {
+    panel.classList.remove('open');
+    fab.style.display = 'flex';
   });
 
-  closeBtn.addEventListener("click", () => {
-    panel.classList.remove("open");
-    fab.style.display = "flex";
-  });
+  function scrollBottom() { msgs.scrollTop = msgs.scrollHeight; }
+
+  function addMsg(text, cls) {
+    var d = document.createElement('div');
+    d.className = cls;
+    d.textContent = text;
+    msgs.appendChild(d);
+    scrollBottom();
+    return d;
+  }
+
+  function showTyping() {
+    var d = document.createElement('div');
+    d.className = 'kec-typing';
+    d.id = 'kec-typing';
+    d.innerHTML = '<div class="kec-dot"></div><div class="kec-dot"></div><div class="kec-dot"></div>';
+    msgs.appendChild(d);
+    scrollBottom();
+  }
+
+  function removeTyping() {
+    var t = document.getElementById('kec-typing');
+    if (t) t.remove();
+  }
+
+  window.kecHandleKey = function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); kecSendMessage(); }
+  };
+
+  window.kecAskChip = function(q) {
+    input.value = q;
+    kecSendMessage();
+  };
+
+  window.kecSendMessage = async function() {
+    var q = input.value.trim();
+    if (!q) return;
+    input.value = '';
+    sendBtn.disabled = true;
+    addMsg(q, 'kec-user-msg');
+    showTyping();
+    try {
+      var res = await fetch(KEC_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q })
+      });
+      removeTyping();
+      if (!res.ok) throw new Error('API error ' + res.status);
+      var data = await res.json();
+      var answer = data.answer || data.response || data.result || data.message || JSON.stringify(data);
+      addMsg(answer, 'kec-bot-msg');
+    } catch(err) {
+      removeTyping();
+      addMsg('Could not reach the server. Please try again. (' + err.message + ')', 'kec-error-msg');
+    }
+    sendBtn.disabled = false;
+    input.focus();
+  };
 })();
 </script>
 <!-- ── End KEC Intel Chatbot ─────────────────────────────────────────── -->
- 
-</body>
-</html>
-    
