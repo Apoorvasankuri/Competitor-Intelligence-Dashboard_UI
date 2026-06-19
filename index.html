@@ -1040,11 +1040,10 @@ document.addEventListener('DOMContentLoaded', initApp);
   Then put your Gemini API key in GEMINI_API_KEY below.
 ================================================================ -->
 
-<!-- ── KEC Intel Chatbot (Gemini-powered) ──────────────────────── -->
+<!-- ── KEC Intel Chatbot (secure, via backend /api/chat) ──────────── -->
 <style>
-  /* FAB — bottom LEFT */
   #kec-chat-fab {
-    position: fixed; bottom: 28px; left: 28px;
+    position: fixed; bottom: 28px; right: 28px;
     width: 54px; height: 54px; border-radius: 50%;
     background: #185FA5; border: none; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
@@ -1054,9 +1053,8 @@ document.addEventListener('DOMContentLoaded', initApp);
   }
   #kec-chat-fab:hover { background: #0C447C; }
 
-  /* Panel — bottom LEFT */
   #kec-chat-panel {
-    position: fixed; bottom: 94px; left: 28px;
+    position: fixed; bottom: 94px; right: 28px;
     width: 400px; height: 560px;
     border-radius: 14px; display: none; flex-direction: column;
     overflow: hidden; z-index: 9998;
@@ -1169,7 +1167,6 @@ document.addEventListener('DOMContentLoaded', initApp);
   #kecSendBtn:disabled { background: #E5E2D0; cursor: not-allowed; }
 </style>
 
-<!-- FAB button -->
 <button id="kec-chat-fab" aria-label="Open KEC Intel Assistant">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1177,7 +1174,6 @@ document.addEventListener('DOMContentLoaded', initApp);
   </svg>
 </button>
 
-<!-- Chat panel -->
 <div id="kec-chat-panel" role="dialog" aria-label="KEC Intel Assistant">
   <div class="kec-chat-header">
     <div class="kec-chat-header-left">
@@ -1189,7 +1185,7 @@ document.addEventListener('DOMContentLoaded', initApp);
       </div>
       <div>
         <h3>KEC Intel Assistant</h3>
-        <p>Competitor Intelligence · Gemini AI</p>
+        <p>Competitor Intelligence · AI powered</p>
       </div>
     </div>
     <button class="kec-chat-close" id="kec-chat-close-btn" aria-label="Close chat">✕</button>
@@ -1197,7 +1193,7 @@ document.addEventListener('DOMContentLoaded', initApp);
 
   <div id="kec-messages">
     <div class="kec-bot-msg">
-      Hello! I can answer questions about competitors, order wins, bids, and market activity using your live intelligence database.
+      Hello! I can answer questions about competitors, order wins, bids, and market activity using your live intelligence database, filtered to your business unit.
       <div class="kec-chip-row">
         <span class="kec-chip" onclick="kecAskChip('Recent order wins of L&T')">L&T order wins</span>
         <span class="kec-chip" onclick="kecAskChip('Latest bidding activity this week')">This week bids</span>
@@ -1222,12 +1218,6 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 <script>
 (function () {
-
-  /* ── CONFIG ─────────────────────────────────────────────────────── */
-  var GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE'; // <-- paste your key here
-  var GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_API_KEY;
-
-  /* ── DOM ────────────────────────────────────────────────────────── */
   var fab      = document.getElementById('kec-chat-fab');
   var panel    = document.getElementById('kec-chat-panel');
   var closeBtn = document.getElementById('kec-chat-close-btn');
@@ -1235,10 +1225,8 @@ document.addEventListener('DOMContentLoaded', initApp);
   var input    = document.getElementById('kecChatInput');
   var sendBtn  = document.getElementById('kecSendBtn');
 
-  /* ── CONVERSATION HISTORY (multi-turn) ──────────────────────────── */
   var chatHistory = [];
 
-  /* ── FAB TOGGLE ─────────────────────────────────────────────────── */
   fab.addEventListener('click', function () {
     panel.classList.add('open');
     fab.style.display = 'none';
@@ -1249,44 +1237,25 @@ document.addEventListener('DOMContentLoaded', initApp);
     fab.style.display = 'flex';
   });
 
-  /* ── SCROLL ─────────────────────────────────────────────────────── */
   function scrollBottom() { msgs.scrollTop = msgs.scrollHeight; }
 
-  /* ── MARKDOWN RENDERER ──────────────────────────────────────────── */
   function renderMarkdown(text) {
-    // Escape HTML to prevent XSS
     var s = text
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
-
-    // Headers (## and ###)
     s = s.replace(/^### (.+)$/gm, '<strong style="display:block;margin-top:10px;color:#0C447C;">$1</strong>');
     s = s.replace(/^## (.+)$/gm,  '<strong style="display:block;margin-top:10px;font-size:14px;color:#0C447C;">$1</strong>');
-
-    // Bold
     s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-
-    // Italic
     s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
-
-    // Bullet list items — wrap consecutive ones in <ul>
     s = s.replace(/^[\-\*•] (.+)$/gm, '<li>$1</li>');
-    s = s.replace(/(<li>[\s\S]*?<\/li>)(\n<li>[\s\S]*?<\/li>)*/g, function (match) {
-      return '<ul>' + match + '</ul>';
-    });
-
-    // Numbered list items
+    s = s.replace(/(<li>[\s\S]*?<\/li>)(\n<li>[\s\S]*?<\/li>)*/g, function (m) { return '<ul>' + m + '</ul>'; });
     s = s.replace(/^\d+\.\s(.+)$/gm, '<li>$1</li>');
-
-    // Paragraph breaks
     s = s.replace(/\n{2,}/g, '<br><br>');
     s = s.replace(/\n/g, '<br>');
-
     return s;
   }
 
-  /* ── ADD MESSAGE ────────────────────────────────────────────────── */
   function addMsg(content, cls, isHtml) {
     var d = document.createElement('div');
     d.className = cls;
@@ -1296,7 +1265,6 @@ document.addEventListener('DOMContentLoaded', initApp);
     return d;
   }
 
-  /* ── TYPING INDICATOR ───────────────────────────────────────────── */
   function showTyping() {
     var d = document.createElement('div');
     d.className = 'kec-typing'; d.id = 'kec-typing';
@@ -1308,191 +1276,68 @@ document.addEventListener('DOMContentLoaded', initApp);
     if (t) t.remove();
   }
 
-  /* ── ARTICLE SEARCH ─────────────────────────────────────────────── */
-  // Finds the most relevant articles from the loaded dashboard data
-  function findRelevantArticles(query) {
-    if (!window.appData || !appData.allArticles || !appData.allArticles.length) return [];
-
-    var q = query.toLowerCase();
-    var qWords = q.split(/\W+/).filter(function (w) { return w.length > 3; });
-
-    var scored = appData.allArticles.map(function (article) {
-      var score = 0;
-      var blob = (
-        (article.title || '') + ' ' +
-        (article.summary || '') + ' ' +
-        (article.competitors || []).join(' ') + ' ' +
-        (article.category || '') + ' ' +
-        (article.sbu || []).join(' ')
-      ).toLowerCase();
-
-      // Strong signal: competitor name explicitly mentioned in query
-      (article.competitors || []).forEach(function (c) {
-        if (c && q.includes(c.toLowerCase())) score += 5;
-      });
-
-      // Category match
-      if (article.category && q.includes(article.category.toLowerCase())) score += 3;
-
-      // SBU match
-      (article.sbu || []).forEach(function (s) {
-        if (s && q.includes(s.toLowerCase())) score += 2;
-      });
-
-      // Keyword overlap
-      qWords.forEach(function (w) { if (blob.includes(w)) score += 1; });
-
-      return { article: article, score: score };
-    })
-    .filter(function (x) { return x.score > 0; })
-    .sort(function (a, b) { return b.score - a.score; })
-    .slice(0, 8)
-    .map(function (x) { return x.article; });
-
-    return scored;
-  }
-
-  /* ── BUILD ARTICLE CONTEXT STRING ──────────────────────────────── */
-  function buildArticleContext(articles) {
-    return articles.map(function (a, i) {
-      var d = new Date(a.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-      return [
-        'Article ' + (i + 1) + ':',
-        'Title: '       + (a.title || '(no title)'),
-        'Date: '        + d,
-        'Category: '    + (a.category || ''),
-        'Competitors: ' + (a.competitors || []).join(', '),
-        'SBUs: '        + (a.sbu || []).join(', '),
-        'Summary: '     + (a.summary || '(no summary)')
-      ].join('\n');
-    }).join('\n\n---\n\n');
-  }
-
-  /* ── SYSTEM PROMPT ──────────────────────────────────────────────── */
-  function buildSystemPrompt(articles) {
-    var base = [
-      'You are KEC Intel Assistant, an AI analyst embedded inside KEC International\'s internal Competitor Intelligence Dashboard.',
-      'KEC International is a leading global EPC (Engineering, Procurement & Construction) company.',
-      '',
-      'KEC\'s key business units: International T&D, India T&D, Civil, Transportation, Renewables, Oil & Gas.',
-      'Key competitors tracked: L&T, Tata Projects, Kalpataru, ABB, Siemens, IRCON, RVNL, Sterling & Wilson, Sterlite Power, NCC, Adani, Power Grid (PGCIL), Megha Engineering (MEIL), GE T&D, Dilip Buildcon, and others in the EPC and power transmission space.',
-      '',
-      'Your role: Help KEC\'s strategy and BD team understand what competitors are doing, spot risks and opportunities, and draw strategic implications for KEC.',
-      '',
-    ].join('\n');
-
-    if (articles.length > 0) {
-      return base +
-        'The following intelligence articles from KEC\'s live competitor database are relevant to this query. ' +
-        'Use them as your PRIMARY source. Synthesise insights and highlight what the activity means for KEC strategically.\n\n' +
-        buildArticleContext(articles) +
-        '\n\nAfter drawing on the articles, you may supplement with your general knowledge if needed. ' +
-        'Always frame insights in terms of implications for KEC\'s competitive positioning.';
-    } else {
-      return base +
-        'No matching articles were found in KEC\'s database for this query. ' +
-        'Answer using your general knowledge about the EPC, power transmission, and infrastructure sector. ' +
-        'If the question is about very recent events, note that you\'re drawing on general knowledge rather than live intelligence from the database. ' +
-        'You may use Google Search to find current information if needed.';
-    }
-  }
-
-  /* ── KEYBOARD HANDLER ───────────────────────────────────────────── */
   window.kecHandleKey = function (e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); kecSendMessage(); }
   };
-
   window.kecAskChip = function (q) { input.value = q; kecSendMessage(); };
 
-  /* ── MAIN SEND ──────────────────────────────────────────────────── */
   window.kecSendMessage = async function () {
     var q = input.value.trim();
     if (!q) return;
+
+    if (!window.kecToken) {
+      addMsg('Please sign in to use the assistant.', 'kec-error-msg', false);
+      return;
+    }
 
     input.value = '';
     sendBtn.disabled = true;
     addMsg(q, 'kec-user-msg', false);
     showTyping();
 
+    var historyBeforeThisTurn = chatHistory.slice();
+
     try {
-      var relevantArticles = findRelevantArticles(q);
-      var hasArticles = relevantArticles.length > 0;
-
-      // Add user turn to history
-      chatHistory.push({ role: 'user', parts: [{ text: q }] });
-
-      // Keep history to last 10 messages (5 exchanges) to avoid token bloat
-      if (chatHistory.length > 10) chatHistory = chatHistory.slice(-10);
-
-      var requestBody = {
-        system_instruction: {
-          parts: [{ text: buildSystemPrompt(relevantArticles) }]
-        },
-        contents: chatHistory,
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 1200
-        }
-      };
-
-      // Enable Google Search grounding only when no articles found
-      if (!hasArticles) {
-        requestBody.tools = [{ google_search: {} }];
-      }
-
-      var res = await fetch(GEMINI_URL, {
+      var res = await fetch(LOCAL_API + '/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({
+          message: q,
+          token: kecToken,
+          conversation_history: historyBeforeThisTurn.slice(-6)
+        })
       });
 
       removeTyping();
 
       if (!res.ok) {
         var errJson = await res.json().catch(function () { return {}; });
-        throw new Error(
-          (errJson.error && errJson.error.message) ? errJson.error.message : 'API error ' + res.status
-        );
+        throw new Error((errJson.detail) ? errJson.detail : ('API error ' + res.status));
       }
 
       var data = await res.json();
-      var answer = (
-        data.candidates &&
-        data.candidates[0] &&
-        data.candidates[0].content &&
-        data.candidates[0].content.parts &&
-        data.candidates[0].content.parts[0] &&
-        data.candidates[0].content.parts[0].text
-      ) || 'No response received.';
+      var answer = data.answer || 'No response received.';
 
-      // Add model turn to history
-      chatHistory.push({ role: 'model', parts: [{ text: answer }] });
+      chatHistory.push({ role: 'user', content: q });
+      chatHistory.push({ role: 'assistant', content: answer });
+      if (chatHistory.length > 12) chatHistory = chatHistory.slice(-12);
 
-      // Build the message HTML
       var msgHtml = renderMarkdown(answer);
-
-      // Add source attribution note
-      if (hasArticles) {
-        msgHtml += '<div class="kec-source-note">Based on ' + relevantArticles.length + ' article' + (relevantArticles.length > 1 ? 's' : '') + ' from your intelligence database.</div>';
-      } else {
-        msgHtml += '<div class="kec-source-note">No matching articles in database — answered from general knowledge.</div>';
+      if (data.sources && data.sources.length > 0) {
+        msgHtml += '<div class="kec-source-note">' + data.sources.length + ' article' +
+          (data.sources.length > 1 ? 's' : '') + ' referenced from your intelligence database.</div>';
       }
 
       addMsg(msgHtml, 'kec-bot-msg', true);
 
     } catch (err) {
       removeTyping();
-      addMsg(
-        'Could not reach the AI. Please check your API key and try again. (' + err.message + ')',
-        'kec-error-msg',
-        false
-      );
+      addMsg('Could not reach the assistant. Please try again. (' + err.message + ')', 'kec-error-msg', false);
     }
 
     sendBtn.disabled = false;
     input.focus();
   };
-
 })();
 </script>
 <!-- ── End KEC Intel Chatbot ─────────────────────────────────────── -->
