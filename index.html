@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competitor Intelligence Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=Montserrat:wght@300;400;500;600;700&family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --ivory-linen: #F9F8F3; --pure-white: #FFFFFF; --charcoal: #2C2C2C;
+            --text-body: #333333; --champagne-silt: #E5E2D0; --watermark-edge: #F2F0E4;
+            --text-secondary: #666666;
+            --navy: #0F2B4C; --navy-light: #1A3D6D; --navy-mid: #244E7F;
+            --blue-accent: #2E6EB5; --blue-pale: rgba(30,74,138,0.08);
+            --blue-border: rgba(30,74,138,0.2); --gold-accent: #C9A84C;
+        }
+        body {
+            font-family: 'Montserrat', 'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: radial-gradient(ellipse at center, var(--ivory-linen) 0%, var(--watermark-edge) 100%);
+            color: var(--charcoal); min-height: 100vh; overflow-x: hidden; letter-spacing: -0.01em;
+        }
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-image: linear-gradient(rgba(15,43,76,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(15,43,76,0.02) 1px, transparent 1px);
+            background-size: 60px 60px; pointer-events: none; z-index: 0;
+        }
+        .container { position: relative; z-index: 1; max-width: 1600px; margin: 0 auto; padding: 0 24px; }
+        .header {
+            padding: 0; background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 20%, #4a7ab5 70%,  #d8e6f5 100%);
+            position: sticky; top: 0; z-index: 100; animation: slideDown 0.6s ease-out;
+            box-shadow: 0 4px 30px rgba(15,43,76,0.25); border-bottom: 3px solid var(--gold-accent);
+        }
+        .header::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 15% 50%, rgba(201,168,76,0.06) 0%, transparent 50%),
+                        radial-gradient(circle at 85% 50%, rgba(201,168,76,0.04) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .header-content { display: flex; justify-content: space-between; align-items: center; padding: 20px 32px; margin: 0 -24px; position: relative; z-index: 1; }
+        .logo-section { display: flex; align-items: center; flex: 0 0 auto; }
+        .ivy-brand-block { display: flex; flex-direction: column; align-items: flex-start; }
+        .ivy-brand { font-family: 'Montserrat', sans-serif; font-size: 28px; color: #FFFFFF; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; line-height: 1; }
+        .brand-divider { width: 40px; height: 2px; background: var(--gold-accent); margin: 8px 0; border-radius: 1px; }
+        .brand-caption { font-family: 'Montserrat', sans-serif; font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 400; letter-spacing: 2px; text-transform: uppercase; }
+        .header-center { flex: 1; text-align: center; }
+        .header-title h1 { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; letter-spacing: -0.3px; color: #FFFFFF; line-height: 1.2; margin: 0; }
+        .header-subtitle { font-family: 'Montserrat', sans-serif; font-size: 12px; color: var(--gold-accent); font-weight: 500; letter-spacing: 3px; text-transform: uppercase; margin-top: 6px; }
+        .header-right { display: flex; align-items: center; flex: 0 0 auto; }
+        .kec-logo { height: 40px; width: auto; object-fit: contain; max-width: 120px; }
+        .ivy-logo {height: 50px; width: auto; object-fit: contain;}
+        .toolbar { display: flex; align-items: center; justify-content: flex-end; padding: 16px 0; border-bottom: 1px solid var(--champagne-silt);gap: 20px; }
+        .toolbar-left { display: flex; align-items: center; gap: 16px; }
+        .refresh-btn { background: var(--navy); color: #FFFFFF; border: none; padding: 10px 22px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Montserrat', sans-serif; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; }
+        .refresh-btn:hover { background: var(--navy-light); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,43,76,0.2); }
+        .refresh-icon { display: inline-block; transition: transform 0.4s ease; }
+        .refresh-btn:hover .refresh-icon { transform: rotate(180deg); }
+        .toolbar-right { display: flex; align-items: center; gap: 10px; }
+        .page-size-label { font-size: 13px; font-weight: 600; color: var(--text-body); }
+        .page-size-select { padding: 8px 12px; background: var(--pure-white); border: 1px solid var(--champagne-silt); border-radius: 6px; color: var(--charcoal); font-size: 13px; font-family: 'Montserrat', sans-serif; cursor: pointer; }
+        .page-size-select:focus { outline: none; border-color: var(--navy); }
+        .nav-tabs { display: flex; gap: 8px; padding: 28px 0; border-bottom: 2px solid var(--champagne-silt); animation: fadeIn 0.8s ease-out 0.2s backwards; align-items: center; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .tab-btn { padding: 12px 28px; background: transparent; border: 2px solid var(--champagne-silt); color: var(--navy); border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 600; font-family: 'Montserrat', sans-serif; transition: all 0.3s ease; letter-spacing: 0.3px; }
+        .tab-btn:hover { border-color: var(--navy-light); color: var(--navy-light); }
+        .tab-btn.active { background: var(--navy); color: #F9F8F3; border-color: var(--navy); box-shadow: 0 4px 16px rgba(15,43,76,0.2); }
+        .content-area { padding: 40px 0; animation: fadeIn 1s ease-out 0.4s backwards; }
+        .filter-panel { background: var(--pure-white); border-radius: 8px; padding: 24px; border: 1px solid var(--champagne-silt); position: sticky; top: 140px; max-height: calc(100vh - 200px); overflow-y: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+        .filter-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-bottom: 24px; color: var(--navy); }
+        .filter-group { margin-bottom: 20px; }
+        .filter-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-body); margin-bottom: 8px; letter-spacing: 0.5px; text-transform: uppercase; }
+        .filter-select { width: 100%; padding: 12px 16px; background: var(--ivory-linen); border: 1px solid var(--champagne-silt); border-radius: 6px; color: var(--charcoal); font-size: 14px; font-family: 'Montserrat', sans-serif; cursor: pointer; transition: all 0.3s ease; }
+        .filter-select:hover { border-color: var(--blue-accent); }
+        .filter-select:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(15,43,76,0.08); }
+        .filter-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
+        .filter-btn { padding: 12px; border: 2px solid var(--champagne-silt); border-radius: 6px; background: transparent; color: var(--navy); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-family: 'Montserrat', sans-serif; }
+        .filter-btn.primary { background: var(--navy); color: #FFFFFF; border-color: var(--navy); }
+        .filter-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(15,43,76,0.1); }
+        .filter-btn.primary:hover { background: var(--navy-light); border-color: var(--navy-light); }
+        .articles-container { display: grid; gap: 24px; }
+        .category-header { background: var(--blue-pale); padding: 16px 24px; border-radius: 8px; border-left: 4px solid var(--navy); font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; letter-spacing: 0.5px; color: var(--navy); }
+        .article-card { background: var(--pure-white); border-radius: 8px; padding: 24px; border: 1px solid var(--champagne-silt); transition: all 0.3s ease; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+        .article-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--navy); transform: scaleY(0); transition: transform 0.3s ease; }
+        .article-card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(15,43,76,0.12); border-color: var(--blue-accent); }
+        .article-card:hover::before { transform: scaleY(1); }
+        .exec-bullet:last-child { border-bottom: none !important; }
+        .article-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .article-title { font-family: 'Public Sans', sans-serif; font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 12px; line-height: 1.4; cursor: pointer; }
+        .article-title:hover { color: var(--blue-accent); }
+        .article-meta { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+        .meta-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-body); font-weight: 500; }
+        .meta-icon { width: 16px; height: 16px; opacity: 0.6; stroke: var(--blue-accent); }
+        .article-summary { font-size: 14px; color: var(--text-body); line-height: 1.6; margin-top: 8px; }
+        .article-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+        .tag { padding: 6px 14px; background: var(--blue-pale); border: 1px solid var(--blue-border); border-radius: 20px; font-size: 12px; color: var(--blue-accent); font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .tag:hover { transform: translateY(-2px); box-shadow: 0 2px 8px rgba(46, 110, 181, 0.2); background: var(--blue-accent); color: white; }
+        .tag.competitor { background: rgba(15,43,76,0.08); border-color: rgba(15,43,76,0.2); color: var(--navy); }
+        .tag.competitor:hover { background: var(--navy); color: white; }
+        .tag.category-tag { background: rgba(201, 168, 76, 0.1); border-color: var(--gold-accent); color: #8B7335; }
+        .tag.category-tag:hover { background: var(--gold-accent); color: white; }
+        .two-column { display: grid; grid-template-columns: 280px 1fr; gap: 32px; }
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 32px; padding: 16px 0; }
+        .page-btn { padding: 8px 14px; border: 1px solid var(--champagne-silt); border-radius: 6px; background: var(--pure-white); color: var(--navy); font-size: 13px; font-weight: 600; font-family: 'Montserrat', sans-serif; cursor: pointer; transition: all 0.2s ease; min-width: 38px; text-align: center; }
+        .page-btn:hover { border-color: var(--navy); background: var(--blue-pale); }
+        .page-btn.active { background: var(--navy); color: #FFFFFF; border-color: var(--navy); }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .page-info { font-size: 13px; color: var(--text-secondary); font-weight: 500; margin: 0 8px; }
+        .empty-state { text-align: center; padding: 80px 40px; background: var(--pure-white); border-radius: 8px; border: 2px dashed var(--champagne-silt); box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+        .empty-state-icon { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
+        .empty-state h3 { font-family: 'Playfair Display', serif; font-size: 28px; margin-bottom: 12px; color: var(--navy); }
+        .empty-state p { color: var(--text-body); font-size: 16px; line-height: 1.6; max-width: 500px; margin: 0 auto; }
+        .retry-btn { background: var(--navy); color: #FFFFFF; border: none; padding: 14px 32px; border-radius: 6px; cursor: pointer; font-size: 15px; font-weight: 600; font-family: 'Montserrat', sans-serif; transition: all 0.3s ease; }
+        .retry-btn:hover { background: var(--navy-light); transform: translateY(-2px); }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--ivory-linen); }
+        ::-webkit-scrollbar-thumb { background: var(--champagne-silt); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--blue-accent); }
+        @media (max-width: 1024px) { .two-column { grid-template-columns: 1fr; } .filter-panel { position: relative; top: 0; max-height: none; } }
+        @media (max-width: 768px) { .header-content { flex-direction: column; gap: 16px; padding: 16px 20px; } .header-title h1 { font-size: 24px; } .header-center { order: -1; } .nav-tabs { overflow-x: auto; padding-bottom: 16px; } .tab-btn { white-space: nowrap; } .toolbar { flex-direction: column; gap: 12px; align-items: flex-start; } } 
+    .assign-table { width: 100%; border-collapse: collapse; background: var(--pure-white); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+.assign-table th { background: var(--navy); color: #FFFFFF; padding: 14px 16px; text-align: left; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; font-family: 'Montserrat', sans-serif; }
+.assign-table td { padding: 14px 16px; border-bottom: 1px solid var(--champagne-silt); font-size: 13px; vertical-align: middle; }
+.assign-table tr:last-child td { border-bottom: none; }
+.assign-table tr:hover td { background: var(--blue-pale); }
+.category-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(201,168,76,0.15); color: #8B7335; border: 1px solid var(--gold-accent); }
+.picker-wrap { position: relative; }
+.picker-input { width: 100%; padding: 8px 12px; border: 1px solid var(--champagne-silt); border-radius: 6px; font-size: 13px; font-family: 'Montserrat', sans-serif; background: var(--ivory-linen); transition: all 0.2s; min-width: 200px; }
+.picker-input:focus { outline: none; border-color: var(--navy); background: white; box-shadow: 0 0 0 3px rgba(15,43,76,0.08); }
+.picker-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid var(--champagne-silt); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 999; max-height: 200px; overflow-y: auto; display: none; }
+.picker-dropdown.open { display: block; }
+.picker-option { padding: 10px 14px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--champagne-silt); }
+.picker-option:last-child { border-bottom: none; }
+.picker-option:hover { background: var(--blue-pale); color: var(--navy); font-weight: 600; }
+.picker-option .opt-role { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+.assign-send-btn { background: var(--navy); color: white; border: none; padding: 12px 32px; border-radius: 6px; font-size: 14px; font-weight: 600; font-family: 'Montserrat', sans-serif; cursor: pointer; transition: all 0.3s; margin-top: 24px; }
+.assign-send-btn:hover { background: var(--navy-light); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(15,43,76,0.2); }
+.assign-send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.assign-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 6px; padding: 14px 20px; margin-top: 16px; font-size: 14px; font-weight: 600; display: none; }
+.manager-input-wrap { background: var(--pure-white); border-radius: 8px; padding: 20px 24px; border: 1px solid var(--champagne-silt); margin-bottom: 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.manager-input-wrap label { font-size: 13px; font-weight: 600; color: var(--navy); white-space: nowrap; }
+    </style>
+    <script src="config.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <img src="IVY Logo.png" alt="IVY Logo" class="ivy-logo">
+                </div>
+                <div class="header-center">
+                    <div class="header-title">
+                        <h1>Competitor Intelligence</h1>
+                        <div class="header-subtitle">Strategic Market Analysis Platform</div>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <img src="KEC Logo.png" alt="KEC Logo" class="kec-logo">
+                </div>
+            </div>
+        </header>
+        <div class="toolbar">
+            <button class="refresh-btn" onclick="loadDataFromAPI()">
+                <span class="refresh-icon">&#8635;</span> Refresh Data
+            </button>
+    
+            <div class="toolbar-right">
+                <span class="page-size-label">Articles per page:</span>
+                <select class="page-size-select" id="pageSizeSelect" onchange="changePageSize()">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
+        <nav class="nav-tabs" id="navTabs">
+            <button class="tab-btn active" onclick="switchTab('executive')">Executive Summary</button>
+            <button class="tab-btn" onclick="switchTab('competitor')">Competitor &amp; SBU</button>
+            <button class="tab-btn" onclick="switchTab('industry')">Industry</button>
+<button class="tab-btn" onclick="switchTab('assign')" style="display:none;">⚡ Assign Actions</button>
+<button class="tab-btn" id="adminTabBtn" style="display:none;" onclick="switchTab('admin')">⚙ Admin</button>
+        </nav>
+        <main class="content-area" id="contentArea"></main>
+    </div>
+    <script>
+        var API_BASE_URL = 'https://competitor-intelligence-dashboard.onrender.com';
+                var LOCAL_API = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' 
+                    ? 'http://127.0.0.1:8000' 
+                    : 'https://competitor-intelligence-dashboard.onrender.com';
+                var kecToken = localStorage.getItem('kec_token');
+                var kecUser = JSON.parse(localStorage.getItem('kec_user') || 'null');
+                if (!kecToken || !kecUser) { window.location.href = 'login.html'; }
+                var appData = { allArticles: [], currentTab: 'executive', filters: { sbu: 'All', competitor: 'All', category: 'All', period: 'All' }, isLoading: false, currentPage: 1, pageSize: 20 };
+        var COMPETITOR_ALIAS_MAP = {
+            'larsen & toubro': 'L&T', 'larsen and toubro': 'L&T', 'l&t ltd': 'L&T', 'l&t limited': 'L&T', 'l&t construction': 'L&T', 'l&t power': 'L&T', 'l&t metro': 'L&T', 'l&t': 'L&T',
+            'tata projects ltd': 'Tata Projects', 'tata projects limited': 'Tata Projects', 'tata projects': 'Tata Projects',
+            'kalpataru power transmission': 'Kalpataru', 'kalpataru projects international': 'Kalpataru', 'kptl': 'Kalpataru', 'kalpataru': 'Kalpataru',
+            'abb india': 'ABB', 'abb limited': 'ABB', 'abb ltd': 'ABB', 'abb': 'ABB',
+            'siemens india': 'Siemens', 'siemens limited': 'Siemens', 'siemens ag': 'Siemens', 'siemens': 'Siemens',
+            'ircon international': 'IRCON', 'ircon international ltd': 'IRCON', 'ircon': 'IRCON',
+            'rail vikas nigam': 'RVNL', 'rail vikas nigam limited': 'RVNL', 'rvnl': 'RVNL',
+            'sterling and wilson': 'Sterling & Wilson', 'sterling & wilson': 'Sterling & Wilson', 's&w': 'Sterling & Wilson', 'sterling and wilson renewable energy': 'Sterling & Wilson', 'sterling & wilson renewable energy': 'Sterling & Wilson',
+            'sterlite power': 'Sterlite', 'sterlite grid': 'Sterlite', 'sterlite': 'Sterlite',
+            'ncc': 'NCC', 'ncc limited': 'NCC', 'ncc ltd': 'NCC',
+            'shapoorji pallonji': 'Shapoorji', 'shapoorji': 'Shapoorji',
+            'pnc infratech': 'PNC', 'pnc': 'PNC',
+            'simplex infrastructures': 'Simplex', 'simplex': 'Simplex',
+            'renew power': 'ReNew', 'renew': 'ReNew', 'renew energy': 'ReNew',
+            'hero future energies': 'Hero Future', 'hero future': 'Hero Future',
+            'adani': 'Adani', 'adani transmission': 'Adani', 'adani energy solutions': 'Adani',
+            'megha engineering': 'Megha Engineering', 'meil': 'Megha Engineering',
+            'power grid': 'Power Grid', 'powergrid': 'Power Grid', 'pgcil': 'Power Grid',
+            'dilip buildcon': 'Dilip Buildcon', 'jmc projects': 'JMC Projects',
+            'hg infra': 'HG Infra', 'h.g. infra': 'HG Infra',
+            'techno electric': 'Techno Electric', 'cg power': 'CG Power', 'crompton greaves': 'CG Power',
+            'ge t&d': 'GE T&D', 'ge vernova': 'GE T&D'
+        };
+        
+        function normalizeCompetitor(name) {
+            if (!name) return null;
+            var trimmed = name.trim();
+            if (trimmed === '-' || trimmed === '' || trimmed.toLowerCase() === 'none') return null;
+            var lower = trimmed.toLowerCase();
+            if (COMPETITOR_ALIAS_MAP[lower]) return COMPETITOR_ALIAS_MAP[lower];
+            return trimmed;
+        }
+        
+        function extractUniqueCompetitors(articles) {
+            var set = new Set();
+            articles.forEach(function(a) { a.competitors.forEach(function(c) { if (c) set.add(c); }); });
+            return Array.from(set).sort();
+        }
+        
+        function normalizeArticleCompetitors(rawList) {
+            var result = [];
+            rawList.forEach(function(c) { var norm = normalizeCompetitor(c); if (norm && result.indexOf(norm) === -1) result.push(norm); });
+            return result;
+        }
+        
+        function getDateCutoff(period) {
+            if (period === 'All') return null;
+            var now = new Date(); var cutoff = new Date();
+            if (period === '7') cutoff.setDate(now.getDate() - 7);
+            else if (period === '15') cutoff.setDate(now.getDate() - 15);
+            else if (period === '30') cutoff.setDate(now.getDate() - 30);
+            else if (period === '90') cutoff.setDate(now.getDate() - 90);
+            else if (period === '180') cutoff.setDate(now.getDate() - 180);
+            return cutoff;
+        }
+        
+        function initApp() {
+            var toolbar = document.querySelector('.toolbar');
+            if (toolbar && kecUser) {
+                var badge = document.createElement('div');
+                badge.style.cssText = 'display:flex;align-items:center;gap:8px;margin-right:auto;';
+                badge.innerHTML = '<span style="font-size:13px;font-weight:600;color:var(--navy);">' + kecUser.name + '</span>' +
+                    '<span style="font-size:11px;color:var(--text-secondary);background:var(--blue-pale);padding:3px 10px;border-radius:12px;border:1px solid var(--blue-border);">' + kecUser.sbu_profile + '</span>' +
+                    '<button onclick="doLogout()" style="padding:6px 14px;background:transparent;border:1.5px solid var(--champagne-silt);border-radius:6px;font-size:12px;font-weight:600;color:var(--text-secondary);cursor:pointer;font-family:Montserrat,sans-serif;">Sign Out</button>';
+                toolbar.insertBefore(badge, toolbar.firstChild);
+            }
+            if (kecUser && kecUser.is_admin) {
+                var adminBtn = document.getElementById('adminTabBtn');
+                if (adminBtn) adminBtn.style.display = 'inline-block';
+            }
+            loadDataFromAPI();
+        }
+        function doLogout() {
+            if (kecToken) { fetch(LOCAL_API + '/api/auth/logout?token=' + kecToken, { method: 'POST' }).catch(function(){}); }
+            localStorage.removeItem('kec_token');
+            localStorage.removeItem('kec_user');
+            window.location.href = 'login.html';
+        }
+        
+        async function loadDataFromAPI() {
+            try {
+                appData.isLoading = true;
+                var url = (kecToken && kecUser) ? LOCAL_API + '/api/data/profile?token=' + kecToken : API_BASE_URL + '/api/data';
+                                var response = await fetch(url);
+                if (!response.ok) throw new Error('API Error: ' + response.status);
+                var result = await response.json();
+                if (result.status === 'success' && result.data) {
+                    appData.allArticles = result.data.map(function(row) {
+                       var cleanTitle = row.newstitle || 'Untitled';
+                       var source = row.Source || 'Unknown Source';
+    
+                       if (source !== 'Unknown Source') {
+                           var patterns = [
+                               ' - ' + source,
+                               ' | ' + source,
+                               ' – ' + source,
+                               '- ' + source,
+                               '| ' + source
+                           ];
+                           patterns.forEach(function(pattern) {
+                               if (cleanTitle.endsWith(pattern)) {
+                                   cleanTitle = cleanTitle.substring(0, cleanTitle.length - pattern.length).trim();
+                               }
+                           });
+                       }
+    
+                       return { 
+                           title: cleanTitle, 
+                           date: row.publishedate || new Date().toISOString(), 
+                           source: row.source, 
+                           link: row.link || '#', 
+                           category: row.category_tag || 'General', 
+                           sbu: parseList(row.sbu_tagging || row.sbu || ''), 
+                           competitors: normalizeArticleCompetitors(parseList(row.competitor_tagging || '')), 
+                           summary: row.summary || row.kec_business_summary || '',
+                           rankScore: row.rank_score || 0,
+                           contractValue: row.contract_value_inr_crore || null,  // ADD THIS
+                           geography: row.geography || null                       // ADD THIS
+                       };
+                    });
+                    appData.currentPage = 1;
+                    switchTab('executive');
+                } else { throw new Error('Invalid API response'); }
+                appData.isLoading = false;
+            } catch (error) {
+                appData.isLoading = false;
+                document.getElementById('contentArea').innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#9888;&#65039;</div><h3>Failed to Load Data</h3><p>Could not connect to the API.</p><p style="color:var(--text-secondary);font-size:14px;margin-top:16px;">Error: ' + error.message + '</p><button class="retry-btn" onclick="loadDataFromAPI()" style="margin-top:20px;">Retry</button></div>';
+            }
+        }
+        
+        function parseList(str) { if (!str) return []; return str.toString().split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; }); }
+        function changePageSize() { appData.pageSize = parseInt(document.getElementById('pageSizeSelect').value); appData.currentPage = 1; switchTab(appData.currentTab); }
+        function goToPage(page) { appData.currentPage = page; switchTab(appData.currentTab); window.scrollTo({ top: 200, behavior: 'smooth' }); }
+        function paginateArticles(articles) { var start = (appData.currentPage - 1) * appData.pageSize; return articles.slice(start, start + appData.pageSize); }
+        
+        function renderPagination(totalArticles) {
+            var totalPages = Math.ceil(totalArticles / appData.pageSize);
+            if (totalPages <= 1) return '';
+            var html = '<div class="pagination-container"><span class="page-info">Page ' + appData.currentPage + ' of ' + totalPages + ' (' + totalArticles + ' articles)</span>';
+            html += '<button class="page-btn" onclick="goToPage(1)" ' + (appData.currentPage === 1 ? 'disabled' : '') + '>&laquo;</button>';
+            html += '<button class="page-btn" onclick="goToPage(' + (appData.currentPage - 1) + ')" ' + (appData.currentPage === 1 ? 'disabled' : '') + '>&lsaquo;</button>';
+            var startP = Math.max(1, appData.currentPage - 2), endP = Math.min(totalPages, appData.currentPage + 2);
+            for (var i = startP; i <= endP; i++) html += '<button class="page-btn' + (i === appData.currentPage ? ' active' : '') + '" onclick="goToPage(' + i + ')">' + i + '</button>';
+            html += '<button class="page-btn" onclick="goToPage(' + (appData.currentPage + 1) + ')" ' + (appData.currentPage === totalPages ? 'disabled' : '') + '>&rsaquo;</button>';
+            html += '<button class="page-btn" onclick="goToPage(' + totalPages + ')" ' + (appData.currentPage === totalPages ? 'disabled' : '') + '>&raquo;</button></div>';
+            return html;
+        }
+        
+        function switchTab(tabName) {
+            appData.currentTab = tabName;
+            var btns = document.querySelectorAll('.tab-btn');
+            btns.forEach(function(btn) { btn.classList.remove('active'); });
+            btns.forEach(function(btn) {
+                if (tabName === 'executive' && btn.textContent.indexOf('Executive') !== -1) btn.classList.add('active');
+                                if (tabName === 'competitor' && btn.textContent.indexOf('Competitor') !== -1) btn.classList.add('active');
+                                if (tabName === 'industry' && btn.textContent.indexOf('Industry') !== -1) btn.classList.add('active');
+                                if (tabName === 'admin' && btn.textContent.indexOf('Admin') !== -1) btn.classList.add('active');
+            });
+            var c = document.getElementById('contentArea');
+            if (appData.allArticles.length === 0) { c.innerHTML = renderEmptyState(); return; }
+            if (tabName === 'executive') c.innerHTML = renderExecutiveSummary();
+            else if (tabName === 'competitor') { c.innerHTML = renderCompetitorView(); setupFilterHandlers(); }
+            else if (tabName === 'industry') c.innerHTML = renderIndustryView();
+            else if (tabName === 'assign') c.innerHTML = renderAssignTab();
+            else if (tabName === 'admin') { c.innerHTML = renderAdminTab(); loadUsers(); }
+        }
+        
+        var CATEGORY_ORDER = [
+    'order wins', 'bidding activity', 'project execution',
+    'mergers & acquisitions', 'partnerships & alliances',
+    'financial', 'stock market'
+];
+
+function renderExecutiveSummary() {
+    var sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    var recent = appData.allArticles.filter(function(a) {
+        return new Date(a.date) >= sevenDaysAgo;
+    });
+
+    var grouped = {};
+    recent.forEach(function(a) {
+        var cat = (a.category || 'general').toLowerCase();
+        // Exclude stock market and industry trends
+        if (cat === 'industry trends' || cat === 'stock market') return;
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(a);
+    });
+
+    Object.keys(grouped).forEach(function(cat) {
+    grouped[cat].sort(function(a, b) {
+        if (b.rankScore !== a.rankScore) return b.rankScore - a.rankScore;
+        return new Date(b.date) - new Date(a.date);
+    });
+
+    var dedupedCat = [];
+grouped[cat].forEach(function(article) {
+    var isDuplicate = dedupedCat.some(function(kept) {
+
+        var stopWords = new Set(['a','an','the','and','or','in','on','at','to','for','of','with','by','is','was','has','this','that','their','these','will','been','also','from']);
+
+        // Helper: compute Jaccard similarity between two summaries
+        function jaccardSimilarity(text1, text2) {
+            var w1 = text1.toLowerCase().split(/\W+/).filter(function(w) { return w.length > 3 && !stopWords.has(w); });
+            var w2 = text2.toLowerCase().split(/\W+/).filter(function(w) { return w.length > 3 && !stopWords.has(w); });
+            if (!w1.length || !w2.length) return 0;
+            var set2 = new Set(w2);
+            var intersection = w1.filter(function(w) { return set2.has(w); }).length;
+            var union = new Set(w1.concat(w2)).size;
+            return union > 0 ? intersection / union : 0;
+        }
+
+        var summary1 = article.summary || article.title || '';
+        var summary2 = kept.summary || kept.title || '';
+        var jaccard = jaccardSimilarity(summary1, summary2);
+
+        // Signal 1: High summary similarity alone is enough (catches IRCON/RVNL case)
+        if (jaccard > 0.35) return true;
+
+        // Signal 2: Same competitors involved
+        var sharedCompetitor = article.competitors.length > 0 && kept.competitors.length > 0 &&
+            article.competitors.some(function(c) {
+                return kept.competitors.indexOf(c) !== -1;
+            });
+        if (!sharedCompetitor) return false;
+
+        // Signal 3: Same contract value
+        var val1 = article.contractValue;
+        var val2 = kept.contractValue;
+        if (val1 && val2 && Math.abs(val1 - val2) / Math.max(val1, val2) < 0.10) return true;
+
+        // Signal 4: Same competitor + moderate summary overlap (catches Kernex JV variants)
+        if (sharedCompetitor && jaccard > 0.20) return true;
+
+        // Signal 5: Same competitor + same geography
+        if (sharedCompetitor && article.geography && kept.geography &&
+            article.geography.toLowerCase() === kept.geography.toLowerCase()) return true;
+
+        return false;
+    });
+
+    if (!isDuplicate) dedupedCat.push(article);
+});
+    grouped[cat] = dedupedCat.slice(0, 5);
+});
+    // Build ordered list of categories to display
+    var orderedCats = CATEGORY_ORDER.filter(function(cat) {
+        return grouped[cat] && grouped[cat].length > 0;
+    });
+    Object.keys(grouped).sort().forEach(function(cat) {
+        if (CATEGORY_ORDER.indexOf(cat) === -1 && grouped[cat].length > 0) orderedCats.push(cat);
+    });
+
+    if (orderedCats.length === 0) {
+        return '<div class="empty-state"><div class="empty-state-icon">📰</div><h3>No Articles This Week</h3><p>No articles published in the last 7 days.</p></div>';
+    }
+
+    var html = '<div class="articles-container">';
+
+    orderedCats.forEach(function(cat) {
+        html += '<div class="article-card">';
+        html += '<div class="category-header" style="margin: -24px -24px 20px -24px; border-radius: 8px 8px 0 0;">' + cat.toUpperCase() + '</div>';
+        html += '<ul style="list-style:none; padding:0; margin:0;">';
+
+        grouped[cat].forEach(function(article) {
+            html += '<li class="exec-bullet" style="padding: 16px 0; border-bottom: 1px solid var(--champagne-silt);">';
+
+            // Bold competitor names using the article's own normalized competitors array
+            var summary = article.summary || article.title || 'No summary available.';
+            if (article.competitors && article.competitors.length > 0) {
+                // Sort by length descending to match longer names first (e.g. "Tata Projects" before "Tata")
+                var sortedCompetitors = article.competitors.slice().sort(function(a, b) {
+                    return b.length - a.length;
+                });
+                sortedCompetitors.forEach(function(competitor) {
+                    if (!competitor || competitor === '-') return;
+                    var escaped = competitor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    var regex = new RegExp('(' + escaped + ')', 'gi');
+                    summary = summary.replace(regex, '<strong>$1</strong>');
+                });
+            }
+
+            html += '<div style="font-size:14px; color:var(--text-body); line-height:1.7;">' + summary + '</div>';
+
+            // Source + date line
+            var d = new Date(article.date);
+            var fd = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            html += '<div style="margin-top:6px; font-size:12px; color:var(--text-secondary); display:flex; gap:12px; align-items:center;">';
+            html += '<span>' + fd + '</span>';
+            if (article.source && article.source !== 'Unknown Source') {
+                html += '<span style="color:var(--champagne-silt);">|</span>';
+                html += '<span style="font-style:italic;">' + article.source + '</span>';
+            }
+            // Clickable competitors as mini tags
+            if (article.competitors && article.competitors.length > 0) {
+                html += '<span style="color:var(--champagne-silt);">|</span>';
+                article.competitors.forEach(function(c) {
+                    if (!c || c === '-') return;
+                    html += '<span onclick="filterByTag(\'competitor\', \'' + c.replace(/'/g, "\\'") + '\')" style="cursor:pointer; background:rgba(15,43,76,0.08); padding:2px 8px; border-radius:10px; font-size:11px; color:var(--navy); font-weight:600;">' + c + '</span>';
+                });
+            }
+            html += '</div>';
+
+            html += '</li>';
+        });
+
+        html += '</ul></div>';
+    });
+
+    html += '</div>';
+    return html;
+}        
+        function renderCompetitorView() {
+            var allSBUs = new Set(), allCategories = new Set();
+            var uniqueCompetitors = extractUniqueCompetitors(appData.allArticles);
+            appData.allArticles.forEach(function(a) { a.sbu.forEach(function(s) { allSBUs.add(s); }); allCategories.add(a.category); });
+            return '<div class="two-column"><aside class="filter-panel"><h3 class="filter-title">Filters</h3>' +
+                '<div class="filter-group"><label>Period</label><select class="filter-select" id="periodFilter"><option value="All">All Time</option><option value="7">Last 7 Days</option><option value="15">Last 15 Days</option><option value="30">Last Month</option><option value="90">3 Months</option><option value="180">6 Months</option></select></div>' +
+                '<div class="filter-group"><label>Business Unit</label><select class="filter-select" id="sbuFilter"><option value="All">All SBUs</option>' + Array.from(allSBUs).sort().map(function(s) { return '<option value="' + s + '">' + s + '</option>'; }).join('') + '</select></div>' +
+                '<div class="filter-group"><label>Competitor</label><select class="filter-select" id="competitorFilter"><option value="All">All Competitors</option>' + uniqueCompetitors.map(function(c) { return '<option value="' + c + '">' + c + '</option>'; }).join('') + '</select></div>' +
+                '<div class="filter-group"><label>Category</label><select class="filter-select" id="categoryFilter"><option value="All">All Categories</option>' + Array.from(allCategories).sort().map(function(c) { return '<option value="' + c + '">' + c + '</option>'; }).join('') + '</select></div>' +
+                '<div class="filter-buttons"><button class="filter-btn primary" onclick="applyFilters()">Apply</button><button class="filter-btn" onclick="clearFilters()">Clear</button></div></aside>' +
+                '<div id="filteredArticles">' + renderFilteredArticles() + '</div></div>';
+        }
+        
+        function renderIndustryView() {
+            var industryArticles = appData.allArticles.filter(function(a) {
+                return a.category && a.category.toLowerCase() === 'industry trends';
+            });
+            var paginated = paginateArticles(industryArticles);
+            var html = '<div class="articles-container">';
+            if (paginated.length === 0) {
+                html += '<div class="empty-state"><div class="empty-state-icon">🏭</div><h3>No Industry Articles</h3><p>No articles tagged with "Industry" category found.</p></div>';
+            } else {
+                html += '<div class="category-header">INDUSTRY</div>';
+                paginated.forEach(function(a) {
+                    html += renderArticleCard(a);
+                });
+            }
+            html += '</div>' + renderPagination(industryArticles.length);
+            return html;
+        }
+        
+        // NEW: Function to handle tag clicks
+        function filterByTag(type, value) {
+            // Switch to Competitor & SBU tab
+            switchTab('competitor');
+            
+            // Wait for DOM to update
+            setTimeout(function() {
+                // Set the appropriate filter
+                if (type === 'sbu') {
+                    appData.filters.sbu = value;
+                    document.getElementById('sbuFilter').value = value;
+                } else if (type === 'competitor') {
+                    appData.filters.competitor = value;
+                    document.getElementById('competitorFilter').value = value;
+                } else if (type === 'category') {
+                    appData.filters.category = value;
+                    document.getElementById('categoryFilter').value = value;
+                }
+                
+                // Apply filters
+                applyFilters();
+                
+                // Scroll to top
+                window.scrollTo({ top: 200, behavior: 'smooth' });
+            }, 100);
+        }
+        
+        function renderArticleCard(article) {
+            var d = new Date(article.date);
+            var fd = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            var sumHtml = article.summary ? '<div class="article-summary">' + article.summary + '</div>' : '';
+            
+            // Build tags HTML with click handlers
+            var categoryTagsHtml = article.category ? 
+                '<span class="tag category-tag" onclick="event.stopPropagation(); filterByTag(\'category\', \'' + article.category.replace(/'/g, "\\'") + '\')">' + article.category + '</span>' : '';
+            
+            var sbuTagsHtml = article.sbu.map(function(s) { 
+                return '<span class="tag" onclick="event.stopPropagation(); filterByTag(\'sbu\', \'' + s.replace(/'/g, "\\'") + '\')">' + s + '</span>'; 
+            }).join('');
+            
+            var competitorTagsHtml = article.competitors.map(function(c) { 
+                return '<span class="tag competitor" onclick="event.stopPropagation(); filterByTag(\'competitor\', \'' + c.replace(/'/g, "\\'") + '\')">' + c + '</span>'; 
+            }).join('');
+            
+            return '<div class="article-card">' +
+                '<div class="article-header"><h3 class="article-title" onclick="window.open(\'' + article.link + '\', \'_blank\')">' + article.title + '</h3></div>' +
+                '<div class="article-meta"><span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' + fd + '</span></div>' +
+                sumHtml +
+                '<div class="article-tags">' + categoryTagsHtml + sbuTagsHtml + competitorTagsHtml + '</div></div>';
+        }
+        
+        function getFilteredArticles() {
+            var filtered = appData.allArticles;
+            if (appData.filters.period !== 'All') { var cutoff = getDateCutoff(appData.filters.period); if (cutoff) filtered = filtered.filter(function(a) { return new Date(a.date) >= cutoff; }); }
+            if (appData.filters.sbu !== 'All') filtered = filtered.filter(function(a) { return a.sbu.indexOf(appData.filters.sbu) !== -1; });
+            if (appData.filters.competitor !== 'All') filtered = filtered.filter(function(a) { return a.competitors.indexOf(appData.filters.competitor) !== -1; });
+            if (appData.filters.category !== 'All') filtered = filtered.filter(function(a) { return a.category === appData.filters.category; });
+            return filtered;
+        }
+        
+        function renderFilteredArticles() {
+            var filtered = getFilteredArticles();
+            if (filtered.length === 0) return '<div class="empty-state"><div class="empty-state-icon">&#128269;</div><h3>No Articles Found</h3><p>Try adjusting your filter criteria</p></div>';
+            var paginated = paginateArticles(filtered);
+            return '<div class="articles-container">' + paginated.map(function(a) { return renderArticleCard(a); }).join('') + '</div>' + renderPagination(filtered.length);
+        }
+        
+        function setupFilterHandlers() {
+            var p = document.getElementById('periodFilter'), s = document.getElementById('sbuFilter'), c = document.getElementById('competitorFilter'), cat = document.getElementById('categoryFilter');
+            if (p) p.value = appData.filters.period; if (s) s.value = appData.filters.sbu; if (c) c.value = appData.filters.competitor; if (cat) cat.value = appData.filters.category;
+        }
+        
+        function applyFilters() {
+            appData.filters.period = document.getElementById('periodFilter').value;
+            appData.filters.sbu = document.getElementById('sbuFilter').value;
+            appData.filters.competitor = document.getElementById('competitorFilter').value;
+            appData.filters.category = document.getElementById('categoryFilter').value;
+            appData.currentPage = 1;
+            document.getElementById('filteredArticles').innerHTML = renderFilteredArticles();
+        }
+        
+        function clearFilters() {
+            appData.filters = { sbu: 'All', competitor: 'All', category: 'All', period: 'All' };
+            document.getElementById('periodFilter').value = 'All';
+            document.getElementById('sbuFilter').value = 'All';
+            document.getElementById('competitorFilter').value = 'All';
+            document.getElementById('categoryFilter').value = 'All';
+            appData.currentPage = 1;
+            document.getElementById('filteredArticles').innerHTML = renderFilteredArticles();
+        }
+        
+        function groupByCategory(articles) { var g = {}; articles.forEach(function(a) { var c = a.category || 'General'; if (!g[c]) g[c] = []; g[c].push(a); }); return g; }
+        function renderEmptyState() { return '<div class="empty-state"><div class="empty-state-icon">&#128202;</div><h3>No Data Available</h3><p>The database is currently empty. Data will appear here once your scraping pipeline populates the database.</p><button class="retry-btn" onclick="loadDataFromAPI()" style="margin-top:20px;">Refresh Data</button></div>'; }
+        // ─── ASSIGN ACTIONS TAB ───────────────────────────────────────────────────────
+
+var LOCAL_API = 'https://competitor-intelligence-dashboard.onrender.com';
+var ACTIONABLE_CATEGORIES = ['order wins','bidding activity','project execution','mergers & acquisitions','partnerships & alliances','regulatory & policy','capacity expansion','new market entry'];
+var assignPickerState = {};
+
+function renderAssignTab() {
+    var actionable = appData.allArticles.filter(function(a) {
+        var cat = (a.category || '').toLowerCase();
+        return ACTIONABLE_CATEGORIES.indexOf(cat) !== -1;
+    });
+
+    var sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    actionable = actionable.filter(function(a) { return new Date(a.date) >= sevenDaysAgo; });
+    actionable.sort(function(a, b) { return b.rankScore - a.rankScore; });
+
+    if (actionable.length === 0) {
+        return '<div class="empty-state"><div class="empty-state-icon">✅</div><h3>No Actionable Items This Week</h3><p>No articles in actionable categories from the last 7 days.</p></div>';
+    }
+
+    var html = '<div class="manager-input-wrap">';
+    html += '<label>Your Email (Manager):</label>';
+    html += '<input type="email" id="managerEmail" class="picker-input" style="max-width:300px;" placeholder="your.email@company.com">';
+    html += '</div>';
+
+    html += '<table class="assign-table"><thead><tr>';
+    html += '<th style="width:35%">Article</th>';
+    html += '<th style="width:15%">Category</th>';
+    html += '<th style="width:20%">Competitor</th>';
+    html += '<th style="width:30%">Assign To</th>';
+    html += '</tr></thead><tbody>';
+
+    actionable.forEach(function(article, idx) {
+        var pickerId = 'picker_' + idx;
+        assignPickerState[pickerId] = { article: article, selected: null };
+
+        var d = new Date(article.date);
+        var fd = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        var competitors = article.competitors.join(', ') || '—';
+
+        html += '<tr>';
+        html += '<td><a href="' + article.link + '" target="_blank" style="color:var(--navy);font-weight:600;text-decoration:none;line-height:1.4;">' + article.title + '</a><div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">' + fd + '</div></td>';
+        html += '<td><span class="category-badge">' + article.category + '</span></td>';
+        html += '<td style="color:var(--text-secondary);">' + competitors + '</td>';
+        html += '<td><div class="picker-wrap" id="wrap_' + pickerId + '">';
+        html += '<input type="text" class="picker-input" id="input_' + pickerId + '" placeholder="Type a name..." autocomplete="off" oninput="onPickerInput(this, \'' + pickerId + '\')" onfocus="onPickerFocus(this, \'' + pickerId + '\')">';
+        html += '<div class="picker-dropdown" id="drop_' + pickerId + '"></div>';
+        html += '</div></td>';
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>';
+    html += '<button class="assign-send-btn" onclick="sendAssignments()">Send Assignment Emails</button>';
+    html += '<div class="assign-success" id="assignSuccess">✅ Emails sent successfully! Team members will receive their assignments shortly.</div>';
+
+    return html;
+}
+
+var pickerDebounceTimer = null;
+
+function onPickerInput(input, pickerId) {
+    var q = input.value.trim();
+    assignPickerState[pickerId].selected = null;
+
+    clearTimeout(pickerDebounceTimer);
+    if (q.length < 2) { closeDropdown(pickerId); return; }
+
+    pickerDebounceTimer = setTimeout(function() {
+        fetch(LOCAL_API + '/api/people/search?q=' + encodeURIComponent(q))
+            .then(function(r) { return r.json(); })
+            .then(function(data) { renderDropdown(pickerId, data.people || []); })
+            .catch(function() { closeDropdown(pickerId); });
+    }, 200);
+}
+
+function onPickerFocus(input, pickerId) {
+    if (input.value.trim().length >= 2) onPickerInput(input, pickerId);
+}
+
+function renderDropdown(pickerId, people) {
+    var drop = document.getElementById('drop_' + pickerId);
+    if (!drop) return;
+    if (people.length === 0) { drop.innerHTML = '<div class="picker-option" style="color:var(--text-secondary);">No results found</div>'; drop.classList.add('open'); return; }
+    drop.innerHTML = people.map(function(p) {
+        return '<div class="picker-option" onclick="selectPerson(\'' + pickerId + '\', ' + JSON.stringify(p).replace(/"/g, '&quot;') + ')">' +
+            '<div>' + p.name + '</div>' +
+            '<div class="opt-role">' + (p.role || '') + ' · ' + (p.sbu || '') + '</div>' +
+            '</div>';
+    }).join('');
+    drop.classList.add('open');
+}
+
+function selectPerson(pickerId, person) {
+    assignPickerState[pickerId].selected = person;
+    document.getElementById('input_' + pickerId).value = person.name + ' (' + person.email + ')';
+    closeDropdown(pickerId);
+}
+
+function closeDropdown(pickerId) {
+    var drop = document.getElementById('drop_' + pickerId);
+    if (drop) drop.classList.remove('open');
+}
+
+document.addEventListener('click', function(e) {
+    Object.keys(assignPickerState).forEach(function(pickerId) {
+        var wrap = document.getElementById('wrap_' + pickerId);
+        if (wrap && !wrap.contains(e.target)) closeDropdown(pickerId);
+    });
+});
+
+async function sendAssignments() {
+    var managerEmail = document.getElementById('managerEmail').value.trim();
+    if (!managerEmail) { alert('Please enter your email address first.'); return; }
+
+    var assignments = [];
+    Object.keys(assignPickerState).forEach(function(pickerId) {
+        var state = assignPickerState[pickerId];
+        if (state.selected) {
+            assignments.push({
+                article_id: state.article.id || 0,
+                assigned_by_email: managerEmail,
+                assigned_to_email: state.selected.email,
+                assigned_to_name: state.selected.name,
+                notes: ''
+            });
+        }
+    });
+
+    if (assignments.length === 0) { alert('Please assign at least one article before sending.'); return; }
+
+    var btn = document.querySelector('.assign-send-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    try {
+        var response = await fetch(LOCAL_API + '/api/assignments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ assignments: assignments })
+        });
+        var result = await response.json();
+        if (result.status === 'success') {
+            document.getElementById('assignSuccess').style.display = 'block';
+            btn.textContent = '✅ Sent!';
+        }
+    } catch (e) {
+        alert('Error saving assignments: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = 'Send Assignment Emails';
+    }
+}
+// ─── ADMIN TAB ────────────────────────────────────────────────────────────────
+
+var SBU_PROFILES = ['Intl T&D','India T&D','Civil','Transportation','Renewables','Oil & Gas','Admin'];
+
+function renderAdminTab() {
+    return '<div style="max-width:1100px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">' +
+        '<h2 style="font-family:Playfair Display,serif;font-size:28px;color:var(--navy);">User Management</h2>' +
+        '<div style="display:flex;gap:12px;">' +
+        '<button onclick="showAddUserForm()" style="background:var(--navy);color:white;border:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">+ Add User</button>' +
+        '<button onclick="sendWeeklyDigest()" id="digestBtn" style="background:var(--gold-accent);color:white;border:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">📧 Send Weekly Digest</button>' +
+        '</div>' +
+        '</div>' +
+        '<div id="userFormWrap"></div>' +
+        '<div id="usersTableWrap"><div style="text-align:center;padding:40px;color:var(--text-secondary);">Loading users...</div></div>' +
+        '</div>';
+}
+
+function showAddUserForm(user) {
+    var isEdit = !!user;
+    
+    // Parse existing BUs if editing a user. Assumes comma-separated string from backend (e.g., "Civil, Renewables")
+    var userBUs = [];
+    if (user && user.sbu_profile) {
+        userBUs = user.sbu_profile.split(',').map(function(s) { return s.trim(); });
+    }
+    
+    var html = '<div style="background:white;border:1px solid var(--champagne-silt);border-radius:8px;padding:24px;margin-bottom:24px;box-shadow:0 4px 20px rgba(0,0,0,0.06);">' +
+        '<h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:20px;">' + (isEdit ? 'Edit User & Storyline Permissions' : 'Add New User & Storyline Permissions') + '</h3>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom: 20px;">' +
+        '<div><label style="font-size:12px;font-weight:600;color:var(--text-body);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Full Name</label>' +
+        '<input id="formName" class="picker-input" value="' + (user ? user.name : '') + '" placeholder="Full name"></div>' +
+        '<div><label style="font-size:12px;font-weight:600;color:var(--text-body);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Email</label>' +
+        '<input id="formEmail" class="picker-input" type="email" value="' + (user ? user.email : '') + '" placeholder="email@kecrpg.com"></div>' +
+        '<div style="display:none;"><input id="formPassword" class="picker-input" type="password"></div>' +
+        '</div>' +
+        
+        // NEW: Multi-Select options for assigned Business Units (Max 3-4 recommended)
+        '<div style="margin-bottom: 20px;">' +
+        '<label style="font-size:12px;font-weight:600;color:var(--navy);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px;">Assigned Business Units / Storylines <span style="text-transform:none;color:var(--text-secondary); font-weight:normal;">(Select 1 to 4 options)</span></label>' +
+        '<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; background: var(--ivory-linen); padding: 16px; border-radius: 6px; border: 1px solid var(--champagne-silt);">' +
+        SBU_PROFILES.map(function(p) { 
+            var isChecked = userBUs.indexOf(p) !== -1 ? ' checked' : '';
+            return '<label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:500; color:var(--text-body); cursor:pointer;">' +
+                   '<input type="checkbox" class="bu-checkbox" value="' + p + '"' + isChecked + ' style="width:16px; height:16px; accent-color:var(--navy);"> ' + p + 
+                   '</label>'; 
+        }).join('') +
+        '</div>' +
+        '</div>' +
+
+        // NEW: Separate Global Admin toggle
+        '<div style="margin-bottom: 20px;">' +
+        '<label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--navy); cursor:pointer;">' +
+        '<input type="checkbox" id="formIsAdmin" ' + (user && user.is_admin ? 'checked' : '') + ' style="width:16px; height:16px; accent-color:var(--navy);"> Give System-Wide Admin Access' +
+        '</label>' +
+        '</div>' +
+
+        '<div style="display:flex; gap:12px; margin-top:20px;">' +
+        '<button onclick="saveUser(' + (isEdit ? user.id : 'null') + ')" style="background:var(--navy);color:white;border:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">' + (isEdit ? 'Save Changes' : 'Create User') + '</button>' +
+        '<button onclick="document.getElementById(\'userFormWrap\').innerHTML=\'\'" style="background:transparent;color:var(--text-secondary);border:1.5px solid var(--champagne-silt);padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">Cancel</button>' +
+        '</div>' +
+        '</div>';
+    document.getElementById('userFormWrap').innerHTML = html
+}
+
+async function saveUser(userId) {
+   var name = document.getElementById('formName').value.trim();
+    var email = document.getElementById('formEmail').value.trim();
+    var password = document.getElementById('formPassword').value;
+    var isAdmin = document.getElementById('formIsAdmin').checked;
+
+    // Gather all selected Business Unit choices from checkboxes
+    var selectedBUs = [];
+    var checkboxes = document.querySelectorAll('.bu-checkbox:checked');
+    checkboxes.forEach(function(cb) {
+        selectedBUs.push(cb.value);
+    });
+
+    if (!name || !email) { alert('Name and email are required.'); return; }
+    
+    // UI Validation reminder constraint
+    if (selectedBUs.length === 0 && !isAdmin) { 
+        alert('Please assign at least 1 Business Unit storyline or set as Admin.'); 
+        return; 
+    }
+    if (selectedBUs.length > 4) {
+        alert('You selected ' + selectedBUs.length + ' units. It is highly recommended to limit a person to 3-4 options for clarity.');
+    }
+
+    // Join choices into a string ("India T&D, Civil, Renewables") expected by database profile structure
+    var sbuProfileString = isAdmin && selectedBUs.length === 0 ? 'Admin' : selectedBUs.join(', ');
+
+    try {
+        var url = userId ? LOCAL_API + '/api/auth/users/' + userId + '?token=' + kecToken : LOCAL_API + '/api/auth/create-user';
+        var method = userId ? 'PUT' : 'POST';
+        var body = { name: name, email: email, sbu_profile: sbuProfileString, is_admin: isAdmin };
+        if (password) body.password = password;
+
+        var response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        var result = await response.json();
+        if (result.status === 'success') {
+            document.getElementById('userFormWrap').innerHTML = '';
+            loadUsers();
+        } else {
+            alert('Error: ' + (result.detail || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function loadUsers() {
+    try {
+        var response = await fetch(LOCAL_API + '/api/auth/users?token=' + kecToken);
+        var result = await response.json();
+        if (result.status === 'success') {
+            renderUsersTable(result.users);
+        }
+    } catch (e) {
+        document.getElementById('usersTableWrap').innerHTML = '<div style="color:red;padding:20px;">Error loading users: ' + e.message + '</div>';
+    }
+}
+
+function renderUsersTable(users) {
+    var SBU_COLORS = {
+        'Intl T&D':     '#E3F2FD', 'India T&D':    '#E8F5E9',
+        'Civil':        '#FFF8E1', 'Transportation':'#F3E5F5',
+        'Renewables':   '#E0F7FA', 'Oil & Gas':     '#FBE9E7',
+        'Admin':        '#0F2B4C'
+    };
+    var SBU_TEXT = { 'Admin': '#FFFFFF' };
+
+    var html = '<table style="width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.04);">' +
+        '<thead><tr style="background:var(--navy);">' +
+        '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Name</th>' +
+        '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Email</th>' +
+        '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Assigned Storylines (BUs)</th>' +
+        '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Status</th>' +
+        '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Last Login</th>' +
+        '<th style="padding:14px 16px;text-align:left;font-size:12px;font-weight:600;color:white;letter-spacing:1px;text-transform:uppercase;font-family:Montserrat,sans-serif;">Actions</th>' +
+        '</tr></thead><tbody>';
+
+    users.forEach(function(user, i) {
+        var shade = i % 2 === 0 ? '#FFFFFF' : '#F9F8F3';
+        var lastLogin = user.last_login ? new Date(user.last_login).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : 'Never';
+
+        // Split individual items to render them uniquely as multiple sub-badges
+        var profileItems = user.sbu_profile ? user.sbu_profile.split(',') : [];
+        var badgesHtml = '<div style="display:flex; flex-wrap:wrap; gap:6px;">';
+        
+        if (user.is_admin) {
+            badgesHtml += '<span style="background:#0F2B4C;color:#FFFFFF;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:700;font-family:Montserrat,sans-serif;text-transform:uppercase;">Admin Override</span>';
+        }
+        
+        profileItems.forEach(function(item) {
+            var cleanItem = item.trim();
+            if(!cleanItem || cleanItem === 'Admin') return;
+            var sbuColor = SBU_COLORS[cleanItem] || '#E5E2D0';
+            var sbuText = SBU_TEXT[cleanItem] || '#333333';
+            badgesHtml += '<span style="background:' + sbuColor + ';color:' + sbuText + ';padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;font-family:Montserrat,sans-serif;">' + cleanItem + '</span>';
+        });
+        if(profileItems.length === 0 && !user.is_admin) {
+            badgesHtml += '<span style="color:var(--text-secondary); font-style:italic;">No Storylines</span>';
+        }
+        badgesHtml += '</div>';
+
+        html += '<tr style="background:' + shade + ';">' +
+            '<td style="padding:14px 16px;font-size:14px;font-weight:600;color:var(--navy);font-family:Montserrat,sans-serif;">' + user.name + '</td>' +
+            '<td style="padding:14px 16px;font-size:13px;color:var(--text-secondary);font-family:Montserrat,sans-serif;">' + user.email + '</td>' +
+            '<td style="padding:14px 16px;">' + badgesHtml + '</td>' +
+            '<td style="padding:14px 16px;"><span style="background:' + (user.is_active ? '#E8F5E9' : '#FFEBEE') + ';color:' + (user.is_active ? '#1B5E20' : '#B71C1C') + ';padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;font-family:Montserrat,sans-serif;">' + (user.is_active ? 'Active' : 'Inactive') + '</span></td>' +
+            '<td style="padding:14px 16px;font-size:13px;color:var(--text-secondary);font-family:Montserrat,sans-serif;">' + lastLogin + '</td>' +
+            '<td style="padding:14px 16px;display:flex;gap:8px;">' +
+            '<button onclick="showAddUserForm(' + JSON.stringify(user).replace(/"/g, '&quot;') + ')" style="background:transparent;border:1.5px solid var(--champagne-silt);padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer;font-family:Montserrat,sans-serif;">Edit</button>' +
+            (user.email !== kecUser.email ? (
+                user.is_active ?
+                '<button onclick="deactivateUser(' + user.id + ')" style="background:transparent;border:1.5px solid #FFCDD2;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:#C62828;cursor:pointer;font-family:Montserrat,sans-serif;">Deactivate</button>' :
+                '<button onclick="activateUser(' + user.id + ')" style="background:transparent;border:1.5px solid #C3E6CB;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:#1B5E20;cursor:pointer;font-family:Montserrat,sans-serif;">Activate</button>' +
+                '<button onclick="deleteUser(' + user.id + ', \'' + user.name.replace(/\'/g, "\\'") + '\')" style="background:transparent;border:1.5px solid #FFCDD2;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;color:#C62828;cursor:pointer;font-family:Montserrat,sans-serif;">Delete</button>'
+            ) : '') +
+            '</td></tr>';
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('usersTableWrap').innerHTML = html;
+}
+
+async function deactivateUser(userId) {
+    if (!confirm('Deactivate this user? They will no longer be able to log in.')) return;
+    try {
+        var response = await fetch(LOCAL_API + '/api/auth/users/' + userId + '?token=' + kecToken, { method: 'DELETE' });
+        var result = await response.json();
+        if (result.status === 'success') loadUsers();
+        else alert('Error: ' + result.detail);
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function activateUser(userId) {
+    try {
+        var response = await fetch(LOCAL_API + '/api/auth/users/' + userId + '/activate?token=' + kecToken, { method: 'PUT' });
+        var result = await response.json();
+        if (result.status === 'success') loadUsers();
+        else alert('Error: ' + result.detail);
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function deleteUser(userId, userName) {
+    if (!confirm('Permanently delete ' + userName + '? This cannot be undone.')) return;
+    try {
+        var response = await fetch(LOCAL_API + '/api/auth/users/' + userId + '/delete?token=' + kecToken, { method: 'DELETE' });
+        var result = await response.json();
+        if (result.status === 'success') loadUsers();
+        else alert('Error: ' + result.detail);
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+async function sendWeeklyDigest() {
+    var btn = document.getElementById('digestBtn');
+    if (!confirm('Send weekly digest emails to all active users now?')) return;
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    try {
+        var response = await fetch(LOCAL_API + '/api/send-digest?token=' + kecToken, { method: 'POST' });
+        var result = await response.json();
+        if (result.status === 'success') {
+            alert('✅ Digest sent!\n\nSent: ' + result.sent + '\nSkipped: ' + result.skipped + '\nFailed: ' + result.failed);
+            btn.textContent = '✅ Sent!';
+        } else {
+            alert('Error: ' + (result.detail || 'Unknown error'));
+            btn.disabled = false;
+            btn.textContent = '📧 Send Weekly Digest';
+        }
+    } catch (e) {
+        alert('Error: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = '📧 Send Weekly Digest';
+    }
+}
+document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+
+    <!-- ================================================================
+  INSTRUCTIONS: Replace everything between
+  "KEC Intel Chatbot" and "End KEC Intel Chatbot"
+  in your index.html with this entire block.
+  Then put your Gemini API key in GEMINI_API_KEY below.
+================================================================ -->
+
+<!-- ── KEC Intel Chatbot (Gemini-powered) ──────────────────────── -->
+<style>
+  /* FAB — bottom LEFT */
+  #kec-chat-fab {
+    position: fixed; bottom: 28px; left: 28px;
+    width: 54px; height: 54px; border-radius: 50%;
+    background: #185FA5; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 22px; z-index: 9999;
+    box-shadow: 0 4px 16px rgba(12,68,124,0.35);
+    transition: background 0.15s;
+  }
+  #kec-chat-fab:hover { background: #0C447C; }
+
+  /* Panel — bottom LEFT */
+  #kec-chat-panel {
+    position: fixed; bottom: 94px; left: 28px;
+    width: 400px; height: 560px;
+    border-radius: 14px; display: none; flex-direction: column;
+    overflow: hidden; z-index: 9998;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    border: 1px solid rgba(55,138,221,0.2);
+    background: white;
+  }
+  #kec-chat-panel.open { display: flex; }
+
+  .kec-chat-header {
+    background: #0C447C; padding: 13px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .kec-chat-header-left { display: flex; align-items: center; gap: 10px; }
+  .kec-chat-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: white;
+  }
+  .kec-chat-header h3 { color: white; font-size: 13px; font-weight: 600; margin: 0; font-family: 'Montserrat', sans-serif; }
+  .kec-chat-header p  { color: rgba(255,255,255,0.55); font-size: 11px; margin: 0; font-family: 'Montserrat', sans-serif; }
+  .kec-chat-close {
+    background: none; border: none;
+    color: rgba(255,255,255,0.6); cursor: pointer;
+    font-size: 18px; padding: 0; line-height: 1;
+  }
+  .kec-chat-close:hover { color: white; }
+
+  #kec-messages {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 10px;
+    background: #F9F8F3;
+  }
+  .kec-bot-msg {
+    align-self: flex-start; background: white;
+    color: #333; padding: 10px 14px;
+    border-radius: 16px 16px 16px 4px;
+    border: 1px solid #E5E2D0;
+    font-size: 13px; line-height: 1.6;
+    max-width: 88%; font-family: 'Montserrat', sans-serif;
+  }
+  .kec-bot-msg ul { padding-left: 18px; margin: 6px 0; }
+  .kec-bot-msg li { margin: 3px 0; }
+  .kec-bot-msg strong { color: #0C447C; }
+  .kec-user-msg {
+    align-self: flex-end; background: #185FA5;
+    color: white; padding: 10px 14px;
+    border-radius: 16px 16px 4px 16px;
+    font-size: 13px; line-height: 1.6;
+    max-width: 88%; font-family: 'Montserrat', sans-serif;
+  }
+  .kec-error-msg {
+    align-self: flex-start; background: #fdecea;
+    color: #c62828; padding: 10px 14px;
+    border-radius: 16px; font-size: 13px; line-height: 1.6;
+    max-width: 88%; font-family: 'Montserrat', sans-serif;
+  }
+  .kec-source-note {
+    font-size: 11px; color: #888; margin-top: 8px;
+    border-top: 1px solid #E5E2D0; padding-top: 6px;
+    font-style: italic;
+  }
+  .kec-typing {
+    align-self: flex-start; background: white;
+    padding: 12px 16px; border-radius: 16px 16px 16px 4px;
+    border: 1px solid #E5E2D0; display: flex; gap: 4px; align-items: center;
+  }
+  .kec-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #888; animation: kecBounce 1.2s infinite;
+  }
+  .kec-dot:nth-child(2) { animation-delay: 0.2s; }
+  .kec-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes kecBounce {
+    0%,60%,100% { transform: translateY(0); }
+    30% { transform: translateY(-5px); }
+  }
+  .kec-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .kec-chip {
+    font-size: 11px; padding: 4px 10px;
+    border-radius: 20px; border: 1px solid #185FA5;
+    color: #185FA5; cursor: pointer;
+    background: white; font-family: 'Montserrat', sans-serif;
+    font-weight: 600; transition: all 0.15s;
+  }
+  .kec-chip:hover { background: #185FA5; color: white; }
+  .kec-input-row {
+    display: flex; gap: 8px; padding: 12px;
+    border-top: 1px solid #E5E2D0; flex-shrink: 0;
+    background: white;
+  }
+  #kecChatInput {
+    flex: 1; border: 1px solid #E5E2D0; border-radius: 8px;
+    padding: 9px 12px; font-size: 13px;
+    font-family: 'Montserrat', sans-serif;
+    resize: none; outline: none; height: 38px;
+    background: #F9F8F3; color: #333;
+  }
+  #kecChatInput:focus { border-color: #185FA5; background: white; }
+  #kecSendBtn {
+    width: 38px; height: 38px; border-radius: 8px;
+    background: #185FA5; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: white; flex-shrink: 0; transition: background 0.15s;
+  }
+  #kecSendBtn:hover { background: #0C447C; }
+  #kecSendBtn:disabled { background: #E5E2D0; cursor: not-allowed; }
+</style>
+
+<!-- FAB button -->
+<button id="kec-chat-fab" aria-label="Open KEC Intel Assistant">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+</button>
+
+<!-- Chat panel -->
+<div id="kec-chat-panel" role="dialog" aria-label="KEC Intel Assistant">
+  <div class="kec-chat-header">
+    <div class="kec-chat-header-left">
+      <div class="kec-chat-avatar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </div>
+      <div>
+        <h3>KEC Intel Assistant</h3>
+        <p>Competitor Intelligence · Gemini AI</p>
+      </div>
+    </div>
+    <button class="kec-chat-close" id="kec-chat-close-btn" aria-label="Close chat">✕</button>
+  </div>
+
+  <div id="kec-messages">
+    <div class="kec-bot-msg">
+      Hello! I can answer questions about competitors, order wins, bids, and market activity using your live intelligence database.
+      <div class="kec-chip-row">
+        <span class="kec-chip" onclick="kecAskChip('Recent order wins of L&T')">L&T order wins</span>
+        <span class="kec-chip" onclick="kecAskChip('Latest bidding activity this week')">This week bids</span>
+        <span class="kec-chip" onclick="kecAskChip('Kalpataru recent news')">Kalpataru news</span>
+        <span class="kec-chip" onclick="kecAskChip('Renewables sector outlook for KEC')">Renewables outlook</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="kec-input-row">
+    <textarea id="kecChatInput" placeholder="Ask about competitors, orders, bids..."
+      onkeydown="kecHandleKey(event)"></textarea>
+    <button id="kecSendBtn" onclick="kecSendMessage()" aria-label="Send">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+(function () {
+
+  /* ── CONFIG ─────────────────────────────────────────────────────── */
+  var GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE'; // <-- paste your key here
+  var GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_API_KEY;
+
+  /* ── DOM ────────────────────────────────────────────────────────── */
+  var fab      = document.getElementById('kec-chat-fab');
+  var panel    = document.getElementById('kec-chat-panel');
+  var closeBtn = document.getElementById('kec-chat-close-btn');
+  var msgs     = document.getElementById('kec-messages');
+  var input    = document.getElementById('kecChatInput');
+  var sendBtn  = document.getElementById('kecSendBtn');
+
+  /* ── CONVERSATION HISTORY (multi-turn) ──────────────────────────── */
+  var chatHistory = [];
+
+  /* ── FAB TOGGLE ─────────────────────────────────────────────────── */
+  fab.addEventListener('click', function () {
+    panel.classList.add('open');
+    fab.style.display = 'none';
+    input.focus();
+  });
+  closeBtn.addEventListener('click', function () {
+    panel.classList.remove('open');
+    fab.style.display = 'flex';
+  });
+
+  /* ── SCROLL ─────────────────────────────────────────────────────── */
+  function scrollBottom() { msgs.scrollTop = msgs.scrollHeight; }
+
+  /* ── MARKDOWN RENDERER ──────────────────────────────────────────── */
+  function renderMarkdown(text) {
+    // Escape HTML to prevent XSS
+    var s = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // Headers (## and ###)
+    s = s.replace(/^### (.+)$/gm, '<strong style="display:block;margin-top:10px;color:#0C447C;">$1</strong>');
+    s = s.replace(/^## (.+)$/gm,  '<strong style="display:block;margin-top:10px;font-size:14px;color:#0C447C;">$1</strong>');
+
+    // Bold
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    // Italic
+    s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+    // Bullet list items — wrap consecutive ones in <ul>
+    s = s.replace(/^[\-\*•] (.+)$/gm, '<li>$1</li>');
+    s = s.replace(/(<li>[\s\S]*?<\/li>)(\n<li>[\s\S]*?<\/li>)*/g, function (match) {
+      return '<ul>' + match + '</ul>';
+    });
+
+    // Numbered list items
+    s = s.replace(/^\d+\.\s(.+)$/gm, '<li>$1</li>');
+
+    // Paragraph breaks
+    s = s.replace(/\n{2,}/g, '<br><br>');
+    s = s.replace(/\n/g, '<br>');
+
+    return s;
+  }
+
+  /* ── ADD MESSAGE ────────────────────────────────────────────────── */
+  function addMsg(content, cls, isHtml) {
+    var d = document.createElement('div');
+    d.className = cls;
+    if (isHtml) { d.innerHTML = content; } else { d.textContent = content; }
+    msgs.appendChild(d);
+    scrollBottom();
+    return d;
+  }
+
+  /* ── TYPING INDICATOR ───────────────────────────────────────────── */
+  function showTyping() {
+    var d = document.createElement('div');
+    d.className = 'kec-typing'; d.id = 'kec-typing';
+    d.innerHTML = '<div class="kec-dot"></div><div class="kec-dot"></div><div class="kec-dot"></div>';
+    msgs.appendChild(d); scrollBottom();
+  }
+  function removeTyping() {
+    var t = document.getElementById('kec-typing');
+    if (t) t.remove();
+  }
+
+  /* ── ARTICLE SEARCH ─────────────────────────────────────────────── */
+  // Finds the most relevant articles from the loaded dashboard data
+  function findRelevantArticles(query) {
+    if (!window.appData || !appData.allArticles || !appData.allArticles.length) return [];
+
+    var q = query.toLowerCase();
+    var qWords = q.split(/\W+/).filter(function (w) { return w.length > 3; });
+
+    var scored = appData.allArticles.map(function (article) {
+      var score = 0;
+      var blob = (
+        (article.title || '') + ' ' +
+        (article.summary || '') + ' ' +
+        (article.competitors || []).join(' ') + ' ' +
+        (article.category || '') + ' ' +
+        (article.sbu || []).join(' ')
+      ).toLowerCase();
+
+      // Strong signal: competitor name explicitly mentioned in query
+      (article.competitors || []).forEach(function (c) {
+        if (c && q.includes(c.toLowerCase())) score += 5;
+      });
+
+      // Category match
+      if (article.category && q.includes(article.category.toLowerCase())) score += 3;
+
+      // SBU match
+      (article.sbu || []).forEach(function (s) {
+        if (s && q.includes(s.toLowerCase())) score += 2;
+      });
+
+      // Keyword overlap
+      qWords.forEach(function (w) { if (blob.includes(w)) score += 1; });
+
+      return { article: article, score: score };
+    })
+    .filter(function (x) { return x.score > 0; })
+    .sort(function (a, b) { return b.score - a.score; })
+    .slice(0, 8)
+    .map(function (x) { return x.article; });
+
+    return scored;
+  }
+
+  /* ── BUILD ARTICLE CONTEXT STRING ──────────────────────────────── */
+  function buildArticleContext(articles) {
+    return articles.map(function (a, i) {
+      var d = new Date(a.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      return [
+        'Article ' + (i + 1) + ':',
+        'Title: '       + (a.title || '(no title)'),
+        'Date: '        + d,
+        'Category: '    + (a.category || ''),
+        'Competitors: ' + (a.competitors || []).join(', '),
+        'SBUs: '        + (a.sbu || []).join(', '),
+        'Summary: '     + (a.summary || '(no summary)')
+      ].join('\n');
+    }).join('\n\n---\n\n');
+  }
+
+  /* ── SYSTEM PROMPT ──────────────────────────────────────────────── */
+  function buildSystemPrompt(articles) {
+    var base = [
+      'You are KEC Intel Assistant, an AI analyst embedded inside KEC International\'s internal Competitor Intelligence Dashboard.',
+      'KEC International is a leading global EPC (Engineering, Procurement & Construction) company.',
+      '',
+      'KEC\'s key business units: International T&D, India T&D, Civil, Transportation, Renewables, Oil & Gas.',
+      'Key competitors tracked: L&T, Tata Projects, Kalpataru, ABB, Siemens, IRCON, RVNL, Sterling & Wilson, Sterlite Power, NCC, Adani, Power Grid (PGCIL), Megha Engineering (MEIL), GE T&D, Dilip Buildcon, and others in the EPC and power transmission space.',
+      '',
+      'Your role: Help KEC\'s strategy and BD team understand what competitors are doing, spot risks and opportunities, and draw strategic implications for KEC.',
+      '',
+    ].join('\n');
+
+    if (articles.length > 0) {
+      return base +
+        'The following intelligence articles from KEC\'s live competitor database are relevant to this query. ' +
+        'Use them as your PRIMARY source. Synthesise insights and highlight what the activity means for KEC strategically.\n\n' +
+        buildArticleContext(articles) +
+        '\n\nAfter drawing on the articles, you may supplement with your general knowledge if needed. ' +
+        'Always frame insights in terms of implications for KEC\'s competitive positioning.';
+    } else {
+      return base +
+        'No matching articles were found in KEC\'s database for this query. ' +
+        'Answer using your general knowledge about the EPC, power transmission, and infrastructure sector. ' +
+        'If the question is about very recent events, note that you\'re drawing on general knowledge rather than live intelligence from the database. ' +
+        'You may use Google Search to find current information if needed.';
+    }
+  }
+
+  /* ── KEYBOARD HANDLER ───────────────────────────────────────────── */
+  window.kecHandleKey = function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); kecSendMessage(); }
+  };
+
+  window.kecAskChip = function (q) { input.value = q; kecSendMessage(); };
+
+  /* ── MAIN SEND ──────────────────────────────────────────────────── */
+  window.kecSendMessage = async function () {
+    var q = input.value.trim();
+    if (!q) return;
+
+    input.value = '';
+    sendBtn.disabled = true;
+    addMsg(q, 'kec-user-msg', false);
+    showTyping();
+
+    try {
+      var relevantArticles = findRelevantArticles(q);
+      var hasArticles = relevantArticles.length > 0;
+
+      // Add user turn to history
+      chatHistory.push({ role: 'user', parts: [{ text: q }] });
+
+      // Keep history to last 10 messages (5 exchanges) to avoid token bloat
+      if (chatHistory.length > 10) chatHistory = chatHistory.slice(-10);
+
+      var requestBody = {
+        system_instruction: {
+          parts: [{ text: buildSystemPrompt(relevantArticles) }]
+        },
+        contents: chatHistory,
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 1200
+        }
+      };
+
+      // Enable Google Search grounding only when no articles found
+      if (!hasArticles) {
+        requestBody.tools = [{ google_search: {} }];
+      }
+
+      var res = await fetch(GEMINI_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
+
+      removeTyping();
+
+      if (!res.ok) {
+        var errJson = await res.json().catch(function () { return {}; });
+        throw new Error(
+          (errJson.error && errJson.error.message) ? errJson.error.message : 'API error ' + res.status
+        );
+      }
+
+      var data = await res.json();
+      var answer = (
+        data.candidates &&
+        data.candidates[0] &&
+        data.candidates[0].content &&
+        data.candidates[0].content.parts &&
+        data.candidates[0].content.parts[0] &&
+        data.candidates[0].content.parts[0].text
+      ) || 'No response received.';
+
+      // Add model turn to history
+      chatHistory.push({ role: 'model', parts: [{ text: answer }] });
+
+      // Build the message HTML
+      var msgHtml = renderMarkdown(answer);
+
+      // Add source attribution note
+      if (hasArticles) {
+        msgHtml += '<div class="kec-source-note">Based on ' + relevantArticles.length + ' article' + (relevantArticles.length > 1 ? 's' : '') + ' from your intelligence database.</div>';
+      } else {
+        msgHtml += '<div class="kec-source-note">No matching articles in database — answered from general knowledge.</div>';
+      }
+
+      addMsg(msgHtml, 'kec-bot-msg', true);
+
+    } catch (err) {
+      removeTyping();
+      addMsg(
+        'Could not reach the AI. Please check your API key and try again. (' + err.message + ')',
+        'kec-error-msg',
+        false
+      );
+    }
+
+    sendBtn.disabled = false;
+    input.focus();
+  };
+
+})();
+</script>
+<!-- ── End KEC Intel Chatbot ─────────────────────────────────────── -->
