@@ -1316,32 +1316,65 @@ window.kecClearChat = function () {
       removeTyping();
 
       if (!res.ok) {
-        var errJson = await res.json().catch(function () { return {}; });
-        throw new Error((errJson.detail) ? errJson.detail : ('API error ' + res.status));
-      }
+    var errJson = await res.json().catch(function () { return {}; });
+    var detail = typeof errJson.detail === 'string' ? errJson.detail : JSON.stringify(errJson.detail || '');
 
-      var data = await res.json();
-      var answer = data.answer || 'No response received.';
+    if (detail.includes('503') || detail.includes('UNAVAILABLE') || detail.includes('high demand'))
+        throw new Error('ERR_HIGH_TRAFFIC');
+    if (detail.includes('429') || detail.includes('RESOURCE_EXHAUSTED') || detail.includes('quota'))
+        throw new Error('ERR_RATE_LIMIT');
+    if (detail.includes('Invalid or expired session') || res.status === 401)
+        throw new Error('ERR_SESSION');
+    if (detail.includes('GEMINI_API_KEY not configured'))
+        throw new Error('ERR_NOT_CONFIGURED');
+    if (detail.includes('API key') || detail.includes('UNAUTHENTICATED'))
+        throw new Error('ERR_BAD_KEY');
+    if (detail.includes('not found') || detail.includes('404'))
+        throw new Error('ERR_UNAVAILABLE');
+    if (detail.includes('database') || detail.includes('connection') || detail.includes('psycopg'))
+        throw new Error('ERR_DATABASE');
+    throw new Error('ERR_GENERIC');
+}
 
-      chatHistory.push({ role: 'user', content: q });
-      chatHistory.push({ role: 'assistant', content: answer });
-      if (chatHistory.length > 12) chatHistory = chatHistory.slice(-12);
+var data = await res.json();
+var answer = data.answer || 'No response received.';
 
-      var msgHtml = renderMarkdown(answer);
-      if (data.sources && data.sources.length > 0) {
-        msgHtml += '<div class="kec-source-note">' + data.sources.length + ' article' +
-          (data.sources.length > 1 ? 's' : '') + ' referenced from your intelligence database.</div>';
-      }
+chatHistory.push({ role: 'user', content: q });
+chatHistory.push({ role: 'assistant', content: answer });
+if (chatHistory.length > 12) chatHistory = chatHistory.slice(-12);
 
-      addMsg(msgHtml, 'kec-bot-msg', true);
+var msgHtml = renderMarkdown(answer);
+if (data.sources && data.sources.length > 0) {
+    msgHtml += '<div class="kec-source-note">' + data.sources.length + ' article' +
+        (data.sources.length > 1 ? 's' : '') + ' referenced from your intelligence database.</div>';
+}
 
-    } catch (err) {
-      removeTyping();
-      addMsg('Could not reach the assistant. Please try again. (' + err.message + ')', 'kec-error-msg', false);
-    }
+addMsg(msgHtml, 'kec-bot-msg', true);
 
-    sendBtn.disabled = false;
-    input.focus();
+} catch (err) {
+    removeTyping();
+    var errorMessages = {
+        'ERR_HIGH_TRAFFIC':   'High traffic detected, please try again after sometime.',
+        'ERR_RATE_LIMIT':     'Usage limit reached, please try again in a few minutes.',
+        'ERR_SESSION':        'Your session has expired. Please refresh the page and sign in again.',
+        'ERR_NOT_CONFIGURED': 'The assistant is not set up yet. Please contact your administrator.',
+        'ERR_BAD_KEY':        'The assistant is misconfigured. Please contact your administrator.',
+        'ERR_UNAVAILABLE':    'The AI service is temporarily unavailable. Please try again later.',
+        'ERR_DATABASE':       'Unable to search the intelligence database. Please try again.',
+        'ERR_GENERIC':        'Something went wrong. Please try again.',
+    };
+    var msg = err.message;
+    if (msg === 'Failed to fetch' || msg.includes('NetworkError') || msg.includes('network'))
+        msg = 'No connection detected. Please check your internet and try again.';
+    else if (msg.includes('timeout') || msg.includes('AbortError'))
+        msg = 'The request timed out. Please try again.';
+    else
+        msg = errorMessages[msg] || 'Something went wrong. Please try again.';
+    addMsg(msg, 'kec-error-msg', false);
+}
+
+sendBtn.disabled = false;
+input.focus();
   };
 })();
 </script>
