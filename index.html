@@ -1356,8 +1356,6 @@ addMsg(msgHtml, 'kec-bot-msg', true);
     var errorMessages = {
         'ERR_HIGH_TRAFFIC':   'High traffic detected, please try again after sometime.',
         'ERR_RATE_LIMIT':     'Usage limit reached, please try again in a few minutes.',
-        if (msg ===  || msg.includes('NetworkError') || msg.includes('network') || msg.includes('fetch'))
-            msg = 'No connection detected. Please check your internet and try again.';
         'ERR_NOT_CONFIGURED': 'The assistant is not set up yet. Please contact your administrator.',
         'ERR_BAD_KEY':        'The assistant is misconfigured. Please contact your administrator.',
         'ERR_UNAVAILABLE':    'The AI service is temporarily unavailable. Please try again later.',
