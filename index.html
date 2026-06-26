@@ -794,6 +794,8 @@ function renderAdminTab() {
         '<div style="display:flex;gap:12px;">' +
         '<button onclick="showAddUserForm()" style="background:var(--navy);color:white;border:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">+ Add User</button>' +
         '<button onclick="sendWeeklyDigest()" id="digestBtn" style="background:var(--gold-accent);color:white;border:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">📧 Send Weekly Digest</button>' +
+        '<button onclick="activateAllUsers()" style="background:#1B5E20;color:white;border:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">✅ Activate All</button>' +
+        '<button onclick="deactivateAllUsers()" style="background:#C62828;color:white;border:none;padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;cursor:pointer;">🚫 Deactivate All</button>' +
         '</div>' +
         '</div>' +
         '<div id="userFormWrap"></div>' +
@@ -973,7 +975,39 @@ function renderUsersTable(users) {
     html += '</tbody></table>';
     document.getElementById('usersTableWrap').innerHTML = html;
 }
+async function activateAllUsers() {
+    if (!confirm('Activate ALL users? They will all be able to log in.')) return;
+    try {
+        var response = await fetch(LOCAL_API + '/api/auth/users?token=' + kecToken);
+        var result = await response.json();
+        if (result.status !== 'success') { alert('Could not load users.'); return; }
+        var inactive = result.users.filter(function(u) { return !u.is_active && u.email !== kecUser.email; });
+        if (inactive.length === 0) { alert('All users are already active.'); return; }
+        await Promise.all(inactive.map(function(u) {
+            return fetch(LOCAL_API + '/api/auth/users/' + u.id + '/activate?token=' + kecToken, { method: 'PUT' });
+        }));
+        loadUsers();
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
 
+async function deactivateAllUsers() {
+    if (!confirm('Deactivate ALL users (except yourself)? They will lose login access.')) return;
+    try {
+        var response = await fetch(LOCAL_API + '/api/auth/users?token=' + kecToken);
+        var result = await response.json();
+        if (result.status !== 'success') { alert('Could not load users.'); return; }
+        var active = result.users.filter(function(u) { return u.is_active && u.email !== kecUser.email; });
+        if (active.length === 0) { alert('No other active users to deactivate.'); return; }
+        await Promise.all(active.map(function(u) {
+            return fetch(LOCAL_API + '/api/auth/users/' + u.id + '?token=' + kecToken, { method: 'DELETE' });
+        }));
+        loadUsers();
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
 async function deactivateUser(userId) {
     if (!confirm('Deactivate this user? They will no longer be able to log in.')) return;
     try {
