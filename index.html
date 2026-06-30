@@ -278,6 +278,12 @@
                 appData.isLoading = true;
                 var url = (kecToken && kecUser) ? LOCAL_API + '/api/data/profile?token=' + kecToken : API_BASE_URL + '/api/data';
                                 var response = await fetch(url);
+                if (response.status === 401) {
+                    localStorage.removeItem('kec_token');
+                    localStorage.removeItem('kec_user');
+                    window.location.href = 'login.html';
+                    return;
+                }
                 if (!response.ok) throw new Error('API Error: ' + response.status);
                 var result = await response.json();
                 if (result.status === 'success' && result.data) {
