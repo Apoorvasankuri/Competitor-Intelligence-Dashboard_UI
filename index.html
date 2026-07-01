@@ -309,15 +309,23 @@
                        return { 
                            title: cleanTitle, 
                            date: row.publishedate || new Date().toISOString(), 
-                           source: row.source, 
+                           source: row.Source || row.source || 'Unknown Source', 
                            link: row.link || '#', 
                            category: row.category_tag || 'General', 
                            sbu: parseList(row.sbu_tagging || row.sbu || ''), 
                            competitors: normalizeArticleCompetitors(parseList(row.competitor_tagging || '')), 
                            summary: row.summary || row.kec_business_summary || '',
                            rankScore: row.rank_score || 0,
-                           contractValue: row.contract_value_inr_crore || null,  // ADD THIS
-                           geography: row.geography || null                       // ADD THIS
+                           contractValue: row.contract_value_inr_crore || null,
+                           geography: row.geography || null,
+                           sourceDomain: row.source_domain || null,
+                           sourceType: row.source_type || 'unknown',
+                           sourceCategory: row.source_category || 'unknown',
+                           sourcePriority: row.source_priority || 8,
+                           sourceAuthorityScore: row.source_authority_score || 5,
+                           preferredForExecutiveSummary: row.preferred_for_executive_summary || false,
+                           sourceNotes: row.source_notes || '',
+                           sourceMatchMethod: row.source_match_method || 'default'
                        };
                     });
                     appData.currentPage = 1;
@@ -494,6 +502,7 @@ grouped[cat].forEach(function(article) {
                 html += '<span style="color:var(--champagne-silt);">|</span>';
                 html += '<span style="font-style:italic;">' + article.source + '</span>';
             }
+            html += getSourceBadge(article);
             // Clickable competitors as mini tags
             if (article.competitors && article.competitors.length > 0) {
                 html += '<span style="color:var(--champagne-silt);">|</span>';
@@ -571,6 +580,50 @@ grouped[cat].forEach(function(article) {
             }, 100);
         }
         
+        function getSourceBadge(article) {
+            var score = Number(article.sourceAuthorityScore || 5);
+            var type = article.sourceType || 'unknown';
+
+            var label = 'Source';
+            var bg = 'rgba(102,102,102,0.08)';
+            var color = '#666';
+            var border = 'rgba(102,102,102,0.2)';
+
+            if (score >= 50) {
+                label = 'Official / Primary';
+                bg = 'rgba(27,94,32,0.10)';
+                color = '#1B5E20';
+                border = 'rgba(27,94,32,0.25)';
+            } else if (score >= 35) {
+                label = 'Specialist Source';
+                bg = 'rgba(15,43,76,0.08)';
+                color = 'var(--navy)';
+                border = 'rgba(15,43,76,0.22)';
+            } else if (score >= 20) {
+                label = 'Business Media';
+                bg = 'rgba(201,168,76,0.12)';
+                color = '#8B7335';
+                border = 'rgba(201,168,76,0.35)';
+            } else if (score >= 10) {
+                label = 'Aggregator';
+                bg = 'rgba(117,117,117,0.08)';
+                color = '#666';
+                border = 'rgba(117,117,117,0.2)';
+            } else {
+                label = 'Low Authority';
+                bg = 'rgba(198,40,40,0.08)';
+                color = '#C62828';
+                border = 'rgba(198,40,40,0.22)';
+            }
+
+            return '<span title="' + (article.sourceNotes || type) + '" style="' +
+                'display:inline-flex;align-items:center;gap:4px;' +
+                'font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;' +
+                'background:' + bg + ';color:' + color + ';border:1px solid ' + border + ';' +
+                'text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;' +
+                '">' + label + '</span>';
+        }
+
         function renderArticleCard(article) {
             var d = new Date(article.date);
             var fd = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -590,7 +643,10 @@ grouped[cat].forEach(function(article) {
             
             return '<div class="article-card">' +
                 '<div class="article-header"><h3 class="article-title" onclick="window.open(\'' + article.link + '\', \'_blank\')">' + article.title + '</h3></div>' +
-                '<div class="article-meta"><span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' + fd + '</span></div>' +
+                '<div class="article-meta" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' + fd + '</span>' +
+                    (article.source && article.source !== 'Unknown Source' ? '<span class="meta-item" style="font-style:italic;color:var(--text-secondary);">' + article.source + '</span>' : '') +
+                    getSourceBadge(article) +
+                '</div>' +
                 sumHtml +
                 '<div class="article-tags">' + categoryTagsHtml + sbuTagsHtml + competitorTagsHtml + '</div></div>';
         }
