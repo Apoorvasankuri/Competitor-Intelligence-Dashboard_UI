@@ -325,7 +325,12 @@
                            sourceAuthorityScore: row.source_authority_score || 5,
                            preferredForExecutiveSummary: row.preferred_for_executive_summary || false,
                            sourceNotes: row.source_notes || '',
-                           sourceMatchMethod: row.source_match_method || 'default'
+                           sourceMatchMethod: row.source_match_method || 'default',
+                           searchQuery: row.search_query || '',
+                           searchQueryType: row.search_query_type || 'unknown',
+                           detectedClientAuthority: row.detected_client_authority || '',
+                           detectedStrategicTheme: row.detected_strategic_theme || '',
+                           acceptedByGate: row.accepted_by_gate || ''
                        };
                     });
                     appData.currentPage = 1;
