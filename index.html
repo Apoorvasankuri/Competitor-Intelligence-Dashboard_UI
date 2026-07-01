@@ -580,8 +580,16 @@ grouped[cat].forEach(function(article) {
             }, 100);
         }
         
+        function escapeAttr(s) {
+            return String(s == null ? '' : s)
+                .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
         function getSourceBadge(article) {
-            var score = Number(article.sourceAuthorityScore || 5);
+            if (!article) return '';
+            var score = Number(article.sourceAuthorityScore);
+            if (!isFinite(score)) score = 5;
             var type = article.sourceType || 'unknown';
 
             var label = 'Source';
@@ -616,7 +624,7 @@ grouped[cat].forEach(function(article) {
                 border = 'rgba(198,40,40,0.22)';
             }
 
-            return '<span title="' + (article.sourceNotes || type) + '" style="' +
+            return '<span title="' + escapeAttr(article.sourceNotes || type) + '" style="' +
                 'display:inline-flex;align-items:center;gap:4px;' +
                 'font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;' +
                 'background:' + bg + ';color:' + color + ';border:1px solid ' + border + ';' +
