@@ -345,7 +345,8 @@
                            clusterCategories: row.cluster_categories || '',
                            clusterPrimarySource: row.cluster_primary_source || row.source || row.Source || '',
                            clusterPrimarySourceType: row.cluster_primary_source_type || row.source_type || '',
-                           clusterPrimaryUrl: row.cluster_primary_url || row.link || '#'
+                           clusterPrimaryUrl: row.cluster_primary_url || row.link || '#',
+                           eventImpactScore: row.event_impact_score || 0
                        };
                     });
                     appData.currentPage = 1;
@@ -409,6 +410,19 @@ function renderExecutiveSummary() {
         return new Date(a.date) >= sevenDaysAgo;
     });
 
+    // Change 5 Part F Step 4: defensive defaults for legacy rows without cluster metadata
+    recent.forEach(function(a) {
+        if ((a.clusterId === null || a.clusterId === undefined || a.clusterId === '') && a.isRepresentativeArticle === undefined) {
+            a.isRepresentativeArticle = true;
+        }
+        if (!a.clusterArticleCount) {
+            a.clusterArticleCount = 1;
+        }
+        if (a.clusterSourceConfidence === undefined || a.clusterSourceConfidence === null || a.clusterSourceConfidence === '') {
+            a.clusterSourceConfidence = 'Low';
+        }
+    });
+
     var grouped = {};
     recent.forEach(function(a) {
         var cat = (a.category || 'general').toLowerCase();
@@ -420,13 +434,21 @@ function renderExecutiveSummary() {
 
     Object.keys(grouped).forEach(function(cat) {
     grouped[cat].sort(function(a, b) {
-        if (b.rankScore !== a.rankScore) return b.rankScore - a.rankScore;
+        if ((b.eventImpactScore || 0) !== (a.eventImpactScore || 0)) return (b.eventImpactScore || 0) - (a.eventImpactScore || 0);
+        if ((b.clusterRankScore || 0) !== (a.clusterRankScore || 0)) return (b.clusterRankScore || 0) - (a.clusterRankScore || 0);
+        if ((b.rankScore || 0) !== (a.rankScore || 0)) return (b.rankScore || 0) - (a.rankScore || 0);
         return new Date(b.date) - new Date(a.date);
     });
 
+    // Change 5 Part F Step 2: reduce to one representative per cluster
+    var clusterReduced = getExecutiveClusterList(grouped[cat]);
+
     var dedupedCat = [];
-grouped[cat].forEach(function(article) {
-    var isDuplicate = dedupedCat.some(function(kept) {
+clusterReduced.forEach(function(article) {
+    // Clustered articles are already de-duplicated by getExecutiveClusterList;
+    // only run Jaccard fallback dedup on articles that have no clusterId.
+    var hasCluster = !(article.clusterId === null || article.clusterId === undefined || article.clusterId === '');
+    var isDuplicate = !hasCluster && dedupedCat.some(function(kept) {
 
         var stopWords = new Set(['a','an','the','and','or','in','on','at','to','for','of','with','by','is','was','has','this','that','their','these','will','been','also','from']);
 
@@ -513,6 +535,12 @@ grouped[cat].forEach(function(article) {
 
             html += '<div style="font-size:14px; color:var(--text-body); line-height:1.7;">' + summary + '</div>';
 
+            // Change 5 Part F Step 3: subtle multi-source note
+            if (Number(article.clusterArticleCount || 1) > 1) {
+                var conf = article.clusterSourceConfidence || 'Medium';
+                html += '<div style="margin-top:4px; font-size:12px; color:var(--text-secondary); font-style:italic;">More sources for this event: ' + Number(article.clusterArticleCount) + ' | Confidence: ' + conf + '</div>';
+            }
+
             // Source + date line
             var d = new Date(article.date);
             var fd = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -523,7 +551,9 @@ grouped[cat].forEach(function(article) {
                 html += '<span style="font-style:italic;">' + article.source + '</span>';
             }
             html += getSourceBadge(article);
+            if (typeof getSearchLensBadge === 'function') html += getSearchLensBadge(article);
             html += getClusterBadge(article);
+            html += getImpactBadge(article);
             // Clickable competitors as mini tags
             if (article.competitors && article.competitors.length > 0) {
                 html += '<span style="color:var(--champagne-silt);">|</span>';
@@ -677,6 +707,69 @@ grouped[cat].forEach(function(article) {
                 'text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;' +
                 '">' + label + '</span>';
         }
+
+        function getImpactBadge(article) {
+            if (!article) return '';
+
+            var score = Number(article.eventImpactScore || 0);
+
+            var label, bg, color, border;
+            if (score >= 350) {
+                label = 'Board-level';
+                bg = 'rgba(198,40,40,0.10)'; color = '#C62828'; border = 'rgba(198,40,40,0.28)';
+            } else if (score >= 250) {
+                label = 'Executive';
+                bg = 'rgba(15,43,76,0.10)'; color = 'var(--navy)'; border = 'rgba(15,43,76,0.25)';
+            } else if (score >= 150) {
+                label = 'SBU-priority';
+                bg = 'rgba(201,168,76,0.14)'; color = '#8B7335'; border = 'rgba(201,168,76,0.38)';
+            } else if (score >= 75) {
+                label = 'Watchlist';
+                bg = 'rgba(46,110,181,0.10)'; color = '#2E6EB5'; border = 'rgba(46,110,181,0.25)';
+            } else {
+                label = 'Context';
+                bg = 'rgba(102,102,102,0.08)'; color = '#666'; border = 'rgba(102,102,102,0.2)';
+            }
+
+            var title = 'Event Impact Score: ' + score + ' | Category: ' + label;
+
+            return '<span title="' + title.replace(/"/g, '&quot;') + '" style="' +
+                'display:inline-flex;align-items:center;gap:4px;' +
+                'font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;' +
+                'background:' + bg + ';color:' + color + ';border:1px solid ' + border + ';' +
+                'text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;' +
+                '">' + label + '</span>';
+        }
+
+        function getExecutiveClusterList(articles) {
+            if (!articles || !articles.length) return [];
+            var result = [];
+            var clusterIndex = {};
+
+            for (var i = 0; i < articles.length; i++) {
+                var article = articles[i];
+                var cid = article.clusterId;
+
+                if (cid === null || cid === undefined || cid === '') {
+                    result.push(article);
+                    continue;
+                }
+
+                if (!clusterIndex.hasOwnProperty(cid)) {
+                    clusterIndex[cid] = result.length;
+                    result.push(article);
+                } else {
+                    var pos = clusterIndex[cid];
+                    var existing = result[pos];
+                    if (existing.isRepresentativeArticle === false && article.isRepresentativeArticle !== false) {
+                        result[pos] = article;
+                    }
+                }
+            }
+
+            return result;
+        }
+
         function renderArticleCard(article) {
             var d = new Date(article.date);
             var fd = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -700,6 +793,7 @@ grouped[cat].forEach(function(article) {
                     (article.source && article.source !== 'Unknown Source' ? '<span class="meta-item" style="font-style:italic;color:var(--text-secondary);">' + article.source + '</span>' : '') +
                     getSourceBadge(article) +
                     getClusterBadge(article) +
+                    getImpactBadge(article) +
                 '</div>' +
                 sumHtml +
                 '<div class="article-tags">' + categoryTagsHtml + sbuTagsHtml + competitorTagsHtml + '</div></div>';
