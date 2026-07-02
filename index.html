@@ -176,7 +176,8 @@
             </div>
         </div>
         <nav class="nav-tabs" id="navTabs">
-            <button class="tab-btn active" onclick="switchTab('executive')">Executive Summary</button>
+            <button class="tab-btn active" onclick="switchTab('brief')">Executive Brief</button>
+            <button class="tab-btn" onclick="switchTab('executive')">Executive Summary</button>
             <button class="tab-btn" onclick="switchTab('competitor')">Competitor &amp; SBU</button>
             <button class="tab-btn" onclick="switchTab('industry')">Industry</button>
 <button class="tab-btn" onclick="switchTab('assign')" style="display:none;">⚡ Assign Actions</button>
@@ -350,7 +351,7 @@
                        };
                     });
                     appData.currentPage = 1;
-                    switchTab('executive');
+                    switchTab('brief');
                 } else { throw new Error('Invalid API response'); }
                 appData.isLoading = false;
             } catch (error) {
@@ -382,14 +383,16 @@
             var btns = document.querySelectorAll('.tab-btn');
             btns.forEach(function(btn) { btn.classList.remove('active'); });
             btns.forEach(function(btn) {
-                if (tabName === 'executive' && btn.textContent.indexOf('Executive') !== -1) btn.classList.add('active');
+                if (tabName === 'brief' && btn.textContent.indexOf('Executive Brief') !== -1) btn.classList.add('active');
+                                if (tabName === 'executive' && btn.textContent.indexOf('Executive Summary') !== -1) btn.classList.add('active');
                                 if (tabName === 'competitor' && btn.textContent.indexOf('Competitor') !== -1) btn.classList.add('active');
                                 if (tabName === 'industry' && btn.textContent.indexOf('Industry') !== -1) btn.classList.add('active');
                                 if (tabName === 'admin' && btn.textContent.indexOf('Admin') !== -1) btn.classList.add('active');
             });
             var c = document.getElementById('contentArea');
             if (appData.allArticles.length === 0) { c.innerHTML = renderEmptyState(); return; }
-            if (tabName === 'executive') c.innerHTML = renderExecutiveSummary();
+            if (tabName === 'brief') c.innerHTML = renderExecutiveBrief();
+            else if (tabName === 'executive') c.innerHTML = renderExecutiveSummary();
             else if (tabName === 'competitor') { c.innerHTML = renderCompetitorView(); setupFilterHandlers(); }
             else if (tabName === 'industry') c.innerHTML = renderIndustryView();
             else if (tabName === 'assign') c.innerHTML = renderAssignTab();
@@ -401,6 +404,11 @@
     'mergers & acquisitions', 'partnerships & alliances',
     'financial', 'stock market'
 ];
+
+// Change 8: Executive Brief config
+var BRIEF_EXCLUDE_CATEGORIES = new Set(['stock market', 'industry trends', 'leadership/management']);
+var BRIEF_MIN_IMPACT_SCORE = 150;
+var BRIEF_MAX_PER_CATEGORY = 5;
 
 function renderExecutiveSummary() {
     var sevenDaysAgo = new Date();
@@ -422,6 +430,106 @@ function renderExecutiveSummary() {
             a.clusterSourceConfidence = 'Low';
         }
     });
+
+    function renderExecutiveBrief() {
+            var fourteenDaysAgo = new Date();
+            fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+            // Shallow-copied working list; do not mutate global appData
+            var working = appData.allArticles.filter(function(a) {
+                return new Date(a.date) >= fourteenDaysAgo;
+            }).map(function(a) {
+                var b = {};
+                for (var k in a) { if (a.hasOwnProperty(k)) b[k] = a[k]; }
+                if (b.eventImpactScore === undefined || b.eventImpactScore === null) b.eventImpactScore = 0;
+                if (!b.clusterArticleCount) b.clusterArticleCount = 1;
+                if (b.clusterSourceConfidence === undefined || b.clusterSourceConfidence === null || b.clusterSourceConfidence === '') b.clusterSourceConfidence = 'Low';
+                if ((b.clusterId === null || b.clusterId === undefined || b.clusterId === '') && b.isRepresentativeArticle === undefined) b.isRepresentativeArticle = true;
+                return b;
+            });
+
+            var grouped = {};
+            working.forEach(function(a) {
+                var cat = (a.category || 'general').toLowerCase();
+                if (BRIEF_EXCLUDE_CATEGORIES.has(cat)) return;
+                if ((a.eventImpactScore || 0) < BRIEF_MIN_IMPACT_SCORE) return;
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push(a);
+            });
+
+            Object.keys(grouped).forEach(function(cat) {
+                grouped[cat].sort(function(a, b) {
+                    if ((b.eventImpactScore || 0) !== (a.eventImpactScore || 0)) return (b.eventImpactScore || 0) - (a.eventImpactScore || 0);
+                    if ((b.clusterRankScore || 0) !== (a.clusterRankScore || 0)) return (b.clusterRankScore || 0) - (a.clusterRankScore || 0);
+                    if ((b.rankScore || 0) !== (a.rankScore || 0)) return (b.rankScore || 0) - (a.rankScore || 0);
+                    return new Date(b.date) - new Date(a.date);
+                });
+                var reduced = getExecutiveClusterList(grouped[cat]);
+                grouped[cat] = reduced.slice(0, BRIEF_MAX_PER_CATEGORY);
+            });
+
+            var orderedCats = CATEGORY_ORDER.filter(function(cat) {
+                return grouped[cat] && grouped[cat].length > 0 && !BRIEF_EXCLUDE_CATEGORIES.has(cat);
+            });
+            Object.keys(grouped).sort().forEach(function(cat) {
+                if (CATEGORY_ORDER.indexOf(cat) === -1 && grouped[cat].length > 0) orderedCats.push(cat);
+            });
+
+            if (orderedCats.length === 0) {
+                return '<div class="empty-state"><div class="empty-state-icon">🧭</div><h3>No High-Impact Events</h3><p>No leadership-worthy items in the last 14 days.</p></div>';
+            }
+
+            var html = '<div class="articles-container">';
+
+            orderedCats.forEach(function(cat) {
+                html += '<div class="article-card" style="border-top:3px solid var(--gold-accent);">';
+                html += '<div class="category-header" style="margin: -24px -24px 20px -24px; border-radius: 8px 8px 0 0;">' + cat.toUpperCase() + '</div>';
+                html += '<ul style="list-style:none; padding:0; margin:0;">';
+
+                grouped[cat].forEach(function(article) {
+                    html += '<li class="exec-bullet" style="padding: 16px 0; border-bottom: 1px solid var(--champagne-silt);">';
+
+                    var summary = article.clusterSummary || article.summary || article.title || 'No summary available.';
+                    if (article.competitors && article.competitors.length > 0) {
+                        var sortedCompetitors = article.competitors.slice().sort(function(a, b) { return b.length - a.length; });
+                        sortedCompetitors.forEach(function(competitor) {
+                            if (!competitor || competitor === '-') return;
+                            var escaped = competitor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            var regex = new RegExp('(' + escaped + ')', 'gi');
+                            summary = summary.replace(regex, '<strong>$1</strong>');
+                        });
+                    }
+
+                    html += '<div style="font-size:14px; color:var(--text-body); line-height:1.7;">' + summary + '</div>';
+
+                    if (Number(article.clusterArticleCount || 1) > 1) {
+                        var conf = article.clusterSourceConfidence || 'Medium';
+                        html += '<div style="margin-top:4px; font-size:12px; color:var(--text-secondary); font-style:italic;">Backed by ' + Number(article.clusterArticleCount) + ' sources | Confidence: ' + conf + '</div>';
+                    }
+
+                    var d = new Date(article.date);
+                    var fd = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    html += '<div style="margin-top:6px; font-size:12px; color:var(--text-secondary); display:flex; gap:12px; align-items:center; flex-wrap:wrap;">';
+                    html += '<span>' + fd + '</span>';
+                    if (article.source && article.source !== 'Unknown Source') {
+                        html += '<span style="color:var(--champagne-silt);">|</span>';
+                        html += '<span style="font-style:italic;">' + article.source + '</span>';
+                    }
+                    html += getImpactBadge(article);
+                    html += getSourceBadge(article);
+                    if (typeof getSearchLensBadge === 'function') html += getSearchLensBadge(article);
+                    html += getClusterBadge(article);
+                    html += '</div>';
+
+                    html += '</li>';
+                });
+
+                html += '</ul></div>';
+            });
+
+            html += '</div>';
+            return html;
+        }
 
     var grouped = {};
     recent.forEach(function(a) {
