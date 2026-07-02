@@ -330,7 +330,22 @@
                            searchQueryType: row.search_query_type || 'unknown',
                            detectedClientAuthority: row.detected_client_authority || '',
                            detectedStrategicTheme: row.detected_strategic_theme || '',
-                           acceptedByGate: row.accepted_by_gate || ''
+                           acceptedByGate: row.accepted_by_gate || '',
+                           clusterId: row.cluster_id || null,
+                           relationshipType: row.relationship_type || 'separate_event',
+                           isRepresentativeArticle: row.is_representative_article !== false,
+                           clusterTitle: row.cluster_title || row.newstitle || row.news_title || '',
+                           clusterSummary: row.cluster_summary || row.summary || '',
+                           clusterArticleCount: row.cluster_article_count || 1,
+                           clusterRepresentativeArticleId: row.cluster_representative_article_id || null,
+                           clusterSourceConfidence: row.cluster_source_confidence || 'Low',
+                           clusterRankScore: row.cluster_rank_score || row.rank_score || 0,
+                           clusterCompetitors: row.cluster_competitors || '',
+                           clusterSbus: row.cluster_sbus || '',
+                           clusterCategories: row.cluster_categories || '',
+                           clusterPrimarySource: row.cluster_primary_source || row.source || row.Source || '',
+                           clusterPrimarySourceType: row.cluster_primary_source_type || row.source_type || '',
+                           clusterPrimaryUrl: row.cluster_primary_url || row.link || '#'
                        };
                     });
                     appData.currentPage = 1;
@@ -482,7 +497,7 @@ grouped[cat].forEach(function(article) {
             html += '<li class="exec-bullet" style="padding: 16px 0; border-bottom: 1px solid var(--champagne-silt);">';
 
             // Bold competitor names using the article's own normalized competitors array
-            var summary = article.summary || article.title || 'No summary available.';
+            var summary = article.clusterSummary || article.summary || article.title || 'No summary available.';
             if (article.competitors && article.competitors.length > 0) {
                 // Sort by length descending to match longer names first (e.g. "Tata Projects" before "Tata")
                 var sortedCompetitors = article.competitors.slice().sort(function(a, b) {
@@ -508,6 +523,7 @@ grouped[cat].forEach(function(article) {
                 html += '<span style="font-style:italic;">' + article.source + '</span>';
             }
             html += getSourceBadge(article);
+            html += getClusterBadge(article);
             // Clickable competitors as mini tags
             if (article.competitors && article.competitors.length > 0) {
                 html += '<span style="color:var(--champagne-silt);">|</span>';
@@ -636,11 +652,35 @@ grouped[cat].forEach(function(article) {
                 'text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;' +
                 '">' + label + '</span>';
         }
+        function getClusterBadge(article) {
+            if (!article) return '';
 
+            var count = Number(article.clusterArticleCount || 1);
+            var relationship = article.relationshipType || 'separate_event';
+            var isRep = article.isRepresentativeArticle !== false;
+
+            var label = count > 1 ? ('Cluster: ' + count + ' sources') : 'Single source';
+
+            var bg = count > 1 ? 'rgba(46,110,181,0.10)' : 'rgba(102,102,102,0.08)';
+            var color = count > 1 ? '#2E6EB5' : '#666';
+            var border = count > 1 ? 'rgba(46,110,181,0.25)' : 'rgba(102,102,102,0.2)';
+
+            var title = 'Relationship: ' + relationship;
+            if (isRep) title += ' | Representative article';
+            if (article.clusterSourceConfidence) title += ' | Confidence: ' + article.clusterSourceConfidence;
+            if (article.clusterRankScore) title += ' | Cluster rank: ' + article.clusterRankScore;
+
+            return '<span title="' + title.replace(/"/g, '&quot;') + '" style="' +
+                'display:inline-flex;align-items:center;gap:4px;' +
+                'font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;' +
+                'background:' + bg + ';color:' + color + ';border:1px solid ' + border + ';' +
+                'text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;' +
+                '">' + label + '</span>';
+        }
         function renderArticleCard(article) {
             var d = new Date(article.date);
             var fd = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-            var sumHtml = article.summary ? '<div class="article-summary">' + article.summary + '</div>' : '';
+            var sumHtml = (article.summary || article.clusterSummary) ? '<div class="article-summary">' + (article.summary || article.clusterSummary) + '</div>' : '';
             
             // Build tags HTML with click handlers
             var categoryTagsHtml = article.category ? 
@@ -659,6 +699,7 @@ grouped[cat].forEach(function(article) {
                 '<div class="article-meta" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><span class="meta-item"><svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>' + fd + '</span>' +
                     (article.source && article.source !== 'Unknown Source' ? '<span class="meta-item" style="font-style:italic;color:var(--text-secondary);">' + article.source + '</span>' : '') +
                     getSourceBadge(article) +
+                    getClusterBadge(article) +
                 '</div>' +
                 sumHtml +
                 '<div class="article-tags">' + categoryTagsHtml + sbuTagsHtml + competitorTagsHtml + '</div></div>';
