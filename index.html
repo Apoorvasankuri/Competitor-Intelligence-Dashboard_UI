@@ -350,7 +350,10 @@
                            clusterPrimarySource: row.cluster_primary_source || row.source || row.Source || '',
                            clusterPrimarySourceType: row.cluster_primary_source_type || row.source_type || '',
                            clusterPrimaryUrl: row.cluster_primary_url || row.link || '#',
-                           eventImpactScore: row.event_impact_score || 0
+                           eventImpactScore: row.event_impact_score || 0,
+                           actionabilityScore: row.actionability_score || 0,
+                           confidenceScore: row.confidence_score || 0,
+                           sbuFitScore: row.sbu_fit_score || 0
                        };
                     });
                     appData.currentPage = 1;
@@ -398,7 +401,6 @@
             var c = document.getElementById('contentArea');
             if (appData.allArticles.length === 0) { c.innerHTML = renderEmptyState(); return; }
             if (tabName === 'brief') c.innerHTML = renderExecutiveSummary();
-            ``
             else if (tabName === 'sbu_storylines') c.innerHTML = renderSBUStorylines();
             else if (tabName === 'competitor_strategy') c.innerHTML = renderCompetitorStrategy();
             else if (tabName === 'client_tracker') {
@@ -618,7 +620,7 @@ function renderExecutiveSummary() {
             SBU_STORYLINE_ORDER.forEach(function(sbu) {
                 var sbuLower = sbu.toLowerCase();
                 var list = working.filter(function(a) {
-                    return (a.sbu || []).map(function(x) { return String(x).toLowerCase(); }).indexOf(sbuLower)Case().indexOf(sbuLower) !== -1;
+                    return (a.sbu || []).map(function(x) { return String(x).toLowerCase(); }).indexOf(sbuLower) !== -1;
                 });
                 list.sort(function(a, b) {
                     if ((b.eventImpactScore || 0) !== (a.eventImpactScore || 0)) return (b.eventImpactScore || 0) - (a.eventImpactScore || 0);
@@ -1219,6 +1221,66 @@ clusterReduced.forEach(function(article) {
                 'text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;' +
                 '">' + label + '</span>';
         }
+            function getSearchLensBadge(article) {
+    if (!article) return '';
+
+    var qt = article.searchQueryType || 'unknown';
+    var label = qt.replace(/_/g, ' ');
+
+    var bg = 'rgba(46,110,181,0.08)';
+    var color = '#2E6EB5';
+    var border = 'rgba(46,110,181,0.22)';
+
+    if (qt.indexOf('site_') === 0) {
+        bg = 'rgba(27,94,32,0.10)';
+        color = '#1B5E20';
+        border = 'rgba(27,94,32,0.25)';
+    }
+
+    return '<span title="Search lens: ' + escapeAttr(qt) + '" style="' +
+        'display:inline-flex;align-items:center;gap:4px;' +
+        'font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;' +
+        'background:' + bg + ';color:' + color + ';border:1px solid ' + border + ';' +
+        'text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;' +
+        '">' + label + '</span>';
+}
+
+function getMultiSignalBadge(article) {
+    if (!article) return '';
+
+    var a = Number(article.actionabilityScore || 0);
+    var c = Number(article.confidenceScore || 0);
+    var f = Number(article.sbuFitScore || 0);
+
+    function oneBadge(letter, score) {
+        var bg = 'rgba(102,102,102,0.08)';
+        var color = '#666';
+        var border = 'rgba(102,102,102,0.20)';
+
+        if (score >= 70) {
+            bg = 'rgba(27,94,32,0.10)';
+            color = '#1B5E20';
+            border = 'rgba(27,94,32,0.25)';
+        } else if (score >= 40) {
+            bg = 'rgba(201,168,76,0.14)';
+            color = '#8B7335';
+            border = 'rgba(201,168,76,0.35)';
+        }
+
+        return '<span style="' +
+            'display:inline-flex;align-items:center;' +
+            'font-size:10px;font-weight:700;padding:2px 6px;border-radius:9px;' +
+            'background:' + bg + ';color:' + color + ';border:1px solid ' + border + ';' +
+            'white-space:nowrap;' +
+            '">' + letter + ':' + Math.round(score) + '</span>';
+    }
+
+    return '<span title="Actionability: ' + a + ' | Confidence: ' + c + ' | SBU fit: ' + f + '" style="display:inline-flex;gap:3px;align-items:center;">' +
+        oneBadge('A', a) +
+        oneBadge('C', c) +
+        oneBadge('F', f) +
+        '</span>';
+}
 
         function getExecutiveClusterList(articles) {
             if (!articles || !articles.length) return [];
