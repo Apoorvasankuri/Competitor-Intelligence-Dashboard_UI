@@ -177,6 +177,8 @@
         </div>
         <nav class="nav-tabs" id="navTabs">
             <button class="tab-btn active" onclick="switchTab('brief')">Executive Brief</button>
+            <button class="tab-btn" onclick="switchTab('sbu_storylines')">SBU Storylines</button>
+            <button class="tab-btn" onclick="switchTab('competitor_strategy')">Competitor Strategy</button>
             <button class="tab-btn" onclick="switchTab('executive')">Executive Summary</button>
             <button class="tab-btn" onclick="switchTab('competitor')">Competitor &amp; SBU</button>
             <button class="tab-btn" onclick="switchTab('industry')">Industry</button>
@@ -384,14 +386,18 @@
             btns.forEach(function(btn) { btn.classList.remove('active'); });
             btns.forEach(function(btn) {
                 if (tabName === 'brief' && btn.textContent.indexOf('Executive Brief') !== -1) btn.classList.add('active');
+                                if (tabName === 'sbu_storylines' && btn.textContent.indexOf('SBU Storylines') !== -1) btn.classList.add('active');
+                                if (tabName === 'competitor_strategy' && btn.textContent.indexOf('Competitor Strategy') !== -1) btn.classList.add('active');
                                 if (tabName === 'executive' && btn.textContent.indexOf('Executive Summary') !== -1) btn.classList.add('active');
-                                if (tabName === 'competitor' && btn.textContent.indexOf('Competitor') !== -1) btn.classList.add('active');
+                                if (tabName === 'competitor' && btn.textContent.indexOf('Competitor &') !== -1) btn.classList.add('active');
                                 if (tabName === 'industry' && btn.textContent.indexOf('Industry') !== -1) btn.classList.add('active');
                                 if (tabName === 'admin' && btn.textContent.indexOf('Admin') !== -1) btn.classList.add('active');
             });
             var c = document.getElementById('contentArea');
             if (appData.allArticles.length === 0) { c.innerHTML = renderEmptyState(); return; }
             if (tabName === 'brief') c.innerHTML = renderExecutiveBrief();
+            else if (tabName === 'sbu_storylines') c.innerHTML = renderSBUStorylines();
+            else if (tabName === 'competitor_strategy') c.innerHTML = renderCompetitorStrategy();
             else if (tabName === 'executive') c.innerHTML = renderExecutiveSummary();
             else if (tabName === 'competitor') { c.innerHTML = renderCompetitorView(); setupFilterHandlers(); }
             else if (tabName === 'industry') c.innerHTML = renderIndustryView();
@@ -409,6 +415,26 @@
 var BRIEF_EXCLUDE_CATEGORIES = new Set(['stock market', 'industry trends', 'leadership/management']);
 var BRIEF_MIN_IMPACT_SCORE = 150;
 var BRIEF_MAX_PER_CATEGORY = 5;
+
+// Change 10: SBU Storylines config
+var SBU_STORYLINE_ORDER = [
+    'India T&D',
+    'International T&D',
+    'Transportation',
+    'Civil',
+    'Renewables',
+    'Oil & Gas'
+];
+var STORYLINE_EXCLUDE_CATEGORIES = new Set(['stock market', 'industry trends', 'leadership/management']);
+var STORYLINE_MIN_IMPACT_SCORE = 120;
+var STORYLINE_LOOKBACK_DAYS = 14;
+var STORYLINE_MAX_EVENTS_PER_SBU = 6;
+// Change 11: Competitor Strategy config
+var COMPETITOR_STRATEGY_LOOKBACK_DAYS = 90;
+var COMPETITOR_STRATEGY_MIN_IMPACT_SCORE = 100;
+var COMPETITOR_STRATEGY_MAX_COMPETITORS = 12;
+var COMPETITOR_STRATEGY_MAX_EVENTS_PER_COMPETITOR = 4;
+var COMPETITOR_STRATEGY_EXCLUDE_CATEGORIES = new Set(['stock market', 'industry trends', 'leadership/management']);
 
 function renderExecutiveSummary() {
     var sevenDaysAgo = new Date();
@@ -530,6 +556,128 @@ function renderExecutiveSummary() {
             html += '</div>';
             return html;
         }
+
+        function renderSBUStorylines() {
+            var lookbackDate = new Date();
+            lookbackDate.setDate(lookbackDate.getDate() - STORYLINE_LOOKBACK_DAYS);
+
+            // Shallow-copied working list; do not mutate appData.allArticles
+            var working = appData.allArticles.filter(function(a) {
+                return new Date(a.date) >= lookbackDate;
+            }).map(function(a) {
+                var b = {};
+                for (var k in a) { if (a.hasOwnProperty(k)) b[k] = a[k]; }
+                if (b.eventImpactScore === undefined || b.eventImpactScore === null) b.eventImpactScore = 0;
+                if (!b.clusterArticleCount) b.clusterArticleCount = 1;
+                if (b.clusterSourceConfidence === undefined || b.clusterSourceConfidence === null || b.clusterSourceConfidence === '') b.clusterSourceConfidence = 'Low';
+                if ((b.clusterId === null || b.clusterId === undefined || b.clusterId === '') && b.isRepresentativeArticle === undefined) b.isRepresentativeArticle = true;
+                if (b.actionabilityScore === undefined || b.actionabilityScore === null) b.actionabilityScore = 0;
+                if (b.confidenceScore === undefined || b.confidenceScore === null) b.confidenceScore = 0;
+                if (b.sbuFitScore === undefined || b.sbuFitScore === null) b.sbuFitScore = 0;
+                return b;
+            }).filter(function(a) {
+                var cat = (a.category || '').toLowerCase();
+                if (STORYLINE_EXCLUDE_CATEGORIES.has(cat)) return false;
+                if ((a.eventImpactScore || 0) < STORYLINE_MIN_IMPACT_SCORE) return false;
+                return true;
+            });
+
+            var storylines = {};
+            var anyEvents = false;
+
+            SBU_STORYLINE_ORDER.forEach(function(sbu) {
+                var sbuLower = sbu.toLowerCase();
+                var list = working.filter(function(a) {
+                    return (a.sbu || '').toLowerCase().indexOf(sbuLower) !== -1;
+                });
+                list.sort(function(a, b) {
+                    if ((b.eventImpactScore || 0) !== (a.eventImpactScore || 0)) return (b.eventImpactScore || 0) - (a.eventImpactScore || 0);
+                    if ((b.clusterRankScore || 0) !== (a.clusterRankScore || 0)) return (b.clusterRankScore || 0) - (a.clusterRankScore || 0);
+                    if ((b.rankScore || 0) !== (a.rankScore || 0)) return (b.rankScore || 0) - (a.rankScore || 0);
+                    return new Date(b.date) - new Date(a.date);
+                });
+                var reduced = getExecutiveClusterList(list).slice(0, STORYLINE_MAX_EVENTS_PER_SBU);
+                storylines[sbu] = reduced;
+                if (reduced.length > 0) anyEvents = true;
+            });
+
+            if (!anyEvents) {
+                return '<div class="empty-state"><div class="empty-state-icon">🏗</div><h3>No SBU Storylines Yet</h3><p>No high-impact SBU-specific events in the last 14 days.</p></div>';
+            }
+
+            var html = '<div class="articles-container">';
+
+            SBU_STORYLINE_ORDER.forEach(function(sbu) {
+                var events = storylines[sbu];
+
+                html += '<div class="article-card" style="border-top:3px solid var(--blue-border); background:var(--watermark-edge);">';
+                html += '<div class="category-header" style="margin: -24px -24px 8px -24px; border-radius: 8px 8px 0 0;">' + sbu.toUpperCase() + '</div>';
+                html += '<div style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">' + events.length + ' event' + (events.length === 1 ? '' : 's') + ' shown</div>';
+
+                if (events.length === 0) {
+                    html += '<div style="font-size:13px; color:var(--text-secondary); font-style:italic;">No recent high-impact events for ' + sbu + ' in the last 14 days.</div>';
+                    html += '</div>';
+                    return;
+                }
+
+                html += '<ul style="list-style:none; padding:0; margin:0;">';
+
+                events.forEach(function(article) {
+                    html += '<li class="exec-bullet" style="padding: 16px 0; border-bottom: 1px solid var(--champagne-silt);">';
+
+                    var summary = article.clusterSummary || article.summary || article.title || 'No summary available.';
+                    if (article.competitors && article.competitors.length > 0) {
+                        var sortedCompetitors = article.competitors.slice().sort(function(a, b) { return b.length - a.length; });
+                        sortedCompetitors.forEach(function(competitor) {
+                            if (!competitor || competitor === '-') return;
+                            var escaped = competitor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            var regex = new RegExp('(' + escaped + ')', 'gi');
+                            summary = summary.replace(regex, '<strong>$1</strong>');
+                        });
+                    }
+
+                    html += '<div style="font-size:14px; color:var(--text-body); line-height:1.7;">' + summary + '</div>';
+
+                    if (Number(article.clusterArticleCount || 1) > 1) {
+                        var conf = article.clusterSourceConfidence || 'Medium';
+                        html += '<div style="margin-top:4px; font-size:12px; color:var(--text-secondary); font-style:italic;">Backed by ' + Number(article.clusterArticleCount) + ' sources | Confidence: ' + conf + '</div>';
+                    }
+
+                    var d = new Date(article.date);
+                    var fd = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    html += '<div style="margin-top:6px; font-size:12px; color:var(--text-secondary); display:flex; gap:12px; align-items:center; flex-wrap:wrap;">';
+                    html += '<span>' + fd + '</span>';
+                    if (article.source && article.source !== 'Unknown Source') {
+                        html += '<span style="color:var(--champagne-silt);">|</span>';
+                        html += '<span style="font-style:italic;">' + article.source + '</span>';
+                    }
+                    html += getImpactBadge(article);
+                    html += getSourceBadge(article);
+                    if (typeof getSearchLensBadge === 'function') html += getSearchLensBadge(article);
+                    html += getClusterBadge(article);
+                    if (typeof getMultiSignalBadge === 'function') html += getMultiSignalBadge(article);
+                    html += '</div>';
+
+                    if (article.competitors && article.competitors.length > 0) {
+                        html += '<div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">';
+                        article.competitors.forEach(function(competitor) {
+                            if (!competitor || competitor === '-') return;
+                            html += '<span class="tag" style="font-size:11px; padding:2px 8px;">' + competitor + '</span>';
+                        });
+                        html += '</div>';
+                    }
+
+                    html += '</li>';
+                });
+
+                html += '</ul></div>';
+            });
+
+            html += '</div>';
+            return html;
+        }
+
+
 
     var grouped = {};
     recent.forEach(function(a) {
@@ -680,7 +828,200 @@ clusterReduced.forEach(function(article) {
 
     html += '</div>';
     return html;
-}        
+}      
+
+// ===== Change 11: Competitor Strategy helpers =====
+        function extractCompetitorEventPool() {
+            var lookback = new Date();
+            lookback.setDate(lookback.getDate() - COMPETITOR_STRATEGY_LOOKBACK_DAYS);
+            return appData.allArticles.filter(function(a) {
+                return new Date(a.date) >= lookback;
+            }).map(function(a) {
+                var b = {};
+                for (var k in a) { if (a.hasOwnProperty(k)) b[k] = a[k]; }
+                if (b.eventImpactScore === undefined || b.eventImpactScore === null) b.eventImpactScore = 0;
+                if (!b.clusterArticleCount) b.clusterArticleCount = 1;
+                if (b.clusterSourceConfidence === undefined || b.clusterSourceConfidence === null || b.clusterSourceConfidence === '') b.clusterSourceConfidence = 'Low';
+                if ((b.clusterId === null || b.clusterId === undefined || b.clusterId === '') && b.isRepresentativeArticle === undefined) b.isRepresentativeArticle = true;
+                if (b.actionabilityScore === undefined || b.actionabilityScore === null) b.actionabilityScore = 0;
+                if (b.confidenceScore === undefined || b.confidenceScore === null) b.confidenceScore = 0;
+                if (b.sbuFitScore === undefined || b.sbuFitScore === null) b.sbuFitScore = 0;
+                return b;
+            }).filter(function(a) {
+                var cat = (a.category || '').toLowerCase();
+                if (COMPETITOR_STRATEGY_EXCLUDE_CATEGORIES.has(cat)) return false;
+                if ((a.eventImpactScore || 0) < COMPETITOR_STRATEGY_MIN_IMPACT_SCORE) return false;
+                var comps = (a.competitors || []).filter(function(c) { return c && c !== '-'; });
+                return comps.length > 0;
+            });
+        }
+
+        function groupArticlesByCompetitor(articles) {
+            var map = {};
+            articles.forEach(function(a) {
+                (a.competitors || []).forEach(function(c) {
+                    var norm = normalizeCompetitor(c);
+                    if (!norm) return;
+                    if (!map[norm]) map[norm] = [];
+                    map[norm].push(a);
+                });
+            });
+            return map;
+        }
+
+        function _topCounts(articles, valueFn, topN) {
+            var counts = {};
+            articles.forEach(function(a) {
+                var vals = valueFn(a);
+                if (!Array.isArray(vals)) vals = [vals];
+                vals.forEach(function(v) {
+                    if (!v) return;
+                    var key = String(v).trim();
+                    if (!key || key === '-' || key.toLowerCase() === 'none') return;
+                    counts[key] = (counts[key] || 0) + 1;
+                });
+            });
+            return Object.keys(counts).map(function(k) {
+                return { key: k, count: counts[k] };
+            }).sort(function(x, y) {
+                if (y.count !== x.count) return y.count - x.count;
+                return x.key.localeCompare(y.key);
+            }).slice(0, topN);
+        }
+
+        function buildCompetitorProfile(competitorName, articles) {
+            var highImpact = articles.filter(function(a) { return (a.eventImpactScore || 0) >= 200; }).length;
+
+            var topCategories = _topCounts(articles, function(a) { return a.category || ''; }, 3)
+                .map(function(o) { return { category: o.key, count: o.count }; });
+            var topSBUs = _topCounts(articles, function(a) {
+                return (a.sbu || '').split(',').map(function(s) { return s.trim(); });
+            }, 3).map(function(o) { return { sbu: o.key, count: o.count }; });
+            var topGeographies = _topCounts(articles, function(a) { return a.geography || ''; }, 3)
+                .map(function(o) { return { geography: o.key, count: o.count }; });
+            var sourceTypes = _topCounts(articles, function(a) { return a.sourceType || ''; }, 3)
+                .map(function(o) { return { sourceType: o.key, count: o.count }; });
+
+            var sorted = articles.slice().sort(function(a, b) {
+                if ((b.eventImpactScore || 0) !== (a.eventImpactScore || 0)) return (b.eventImpactScore || 0) - (a.eventImpactScore || 0);
+                if ((b.clusterRankScore || 0) !== (a.clusterRankScore || 0)) return (b.clusterRankScore || 0) - (a.clusterRankScore || 0);
+                if ((b.rankScore || 0) !== (a.rankScore || 0)) return (b.rankScore || 0) - (a.rankScore || 0);
+                return new Date(b.date) - new Date(a.date);
+            });
+            var topEvents = getExecutiveClusterList(sorted).slice(0, COMPETITOR_STRATEGY_MAX_EVENTS_PER_COMPETITOR);
+
+            return {
+                name: competitorName,
+                totalEvents: articles.length,
+                highImpactEvents: highImpact,
+                topCategories: topCategories,
+                topSBUs: topSBUs,
+                topGeographies: topGeographies,
+                sourceTypes: sourceTypes,
+                topEvents: topEvents
+            };
+        }
+
+        function rankCompetitors(profiles) {
+            return Object.keys(profiles).map(function(k) { return profiles[k]; })
+                .sort(function(a, b) {
+                    if (b.highImpactEvents !== a.highImpactEvents) return b.highImpactEvents - a.highImpactEvents;
+                    if (b.totalEvents !== a.totalEvents) return b.totalEvents - a.totalEvents;
+                    return a.name.localeCompare(b.name);
+                })
+                .slice(0, COMPETITOR_STRATEGY_MAX_COMPETITORS);
+        }
+
+        function renderCompetitorStrategy() {
+            var pool = extractCompetitorEventPool();
+
+            if (pool.length === 0) {
+                return '<div class="empty-state"><div class="empty-state-icon">🏢</div><h3>No Competitor Strategy Yet</h3><p>No high-impact competitor events in the last 90 days.</p></div>';
+            }
+
+            var grouped = groupArticlesByCompetitor(pool);
+            var profiles = {};
+            Object.keys(grouped).forEach(function(name) {
+                profiles[name] = buildCompetitorProfile(name, grouped[name]);
+            });
+            var ranked = rankCompetitors(profiles);
+
+            var html = '<div style="margin-bottom:20px;">';
+            html += '<h2 style="margin:0; font-family:Georgia,serif; color:var(--navy);">Competitor Strategy</h2>';
+            html += '<p style="margin:4px 0 0; font-size:13px; color:var(--text-secondary);">Last ' + COMPETITOR_STRATEGY_LOOKBACK_DAYS + ' days · High-impact events only</p>';
+            html += '</div>';
+
+            html += '<div class="articles-container">';
+
+            ranked.forEach(function(p) {
+                html += '<div class="article-card" style="border-left:4px solid var(--navy);">';
+                html += '<div style="font-size:18px; font-weight:700; color:var(--navy); font-family:Georgia,serif;">' + p.name + '</div>';
+                html += '<div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">' + p.totalEvents + ' event' + (p.totalEvents === 1 ? '' : 's') + ' · ' + p.highImpactEvents + ' high-impact</div>';
+
+                function chipRow(label, items, fmt) {
+                    if (!items || items.length === 0) return '';
+                    var row = '<div style="margin-top:10px; font-size:12px; color:var(--text-secondary);"><span style="font-weight:700; color:var(--text-body);">' + label + ':</span> ';
+                    row += items.map(function(it) {
+                        return '<span class="tag" style="font-size:11px; padding:2px 8px; margin-right:4px;">' + fmt(it) + '</span>';
+                    }).join('');
+                    return row + '</div>';
+                }
+
+                html += chipRow('Top Focus', p.topCategories, function(it) { return it.category + ' × ' + it.count; });
+                html += chipRow('SBUs', p.topSBUs, function(it) { return it.sbu + ' × ' + it.count; });
+                html += chipRow('Geographies', p.topGeographies, function(it) { return it.geography + ' × ' + it.count; });
+                html += chipRow('Sources', p.sourceTypes, function(it) { return it.sourceType + ' × ' + it.count; });
+
+                if (!p.topEvents || p.topEvents.length === 0) {
+                    html += '<div style="margin-top:14px; font-size:13px; color:var(--text-secondary); font-style:italic;">No high-impact events to display for this competitor.</div>';
+                    html += '</div>';
+                    return;
+                }
+
+                html += '<ul style="list-style:none; padding:0; margin:16px 0 0;">';
+                p.topEvents.forEach(function(article) {
+                    html += '<li class="exec-bullet" style="padding: 14px 0; border-top: 1px solid var(--champagne-silt);">';
+
+                    var summary = article.clusterSummary || article.summary || article.title || 'No summary available.';
+                    if (article.competitors && article.competitors.length > 0) {
+                        var sortedCompetitors = article.competitors.slice().sort(function(a, b) { return b.length - a.length; });
+                        sortedCompetitors.forEach(function(competitor) {
+                            if (!competitor || competitor === '-') return;
+                            var escaped = competitor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            var regex = new RegExp('(' + escaped + ')', 'gi');
+                            summary = summary.replace(regex, '<strong>$1</strong>');
+                        });
+                    }
+                    html += '<div style="font-size:13px; color:var(--text-body); line-height:1.6;">' + summary + '</div>';
+
+                    var d = new Date(article.date);
+                    var fd = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    html += '<div style="margin-top:6px; font-size:12px; color:var(--text-secondary); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">';
+                    html += '<span>' + fd + '</span>';
+                    if (article.source && article.source !== 'Unknown Source') {
+                        html += '<span style="color:var(--champagne-silt);">|</span>';
+                        html += '<span style="font-style:italic;">' + article.source + '</span>';
+                    }
+                    html += getImpactBadge(article);
+                    html += getSourceBadge(article);
+                    if (typeof getSearchLensBadge === 'function') html += getSearchLensBadge(article);
+                    html += getClusterBadge(article);
+                    if (typeof getMultiSignalBadge === 'function') html += getMultiSignalBadge(article);
+                    var url = article.clusterPrimaryUrl || article.link;
+                    if (url && url !== '#') {
+                        html += '<a href="' + url + '" target="_blank" rel="noopener" style="color:var(--blue-accent, #2E6EB5); font-weight:600; text-decoration:none;">Open →</a>';
+                    }
+                    html += '</div>';
+
+                    html += '</li>';
+                });
+                html += '</ul></div>';
+            });
+
+            html += '</div>';
+            return html;
+        }
+        
         function renderCompetitorView() {
             var allSBUs = new Set(), allCategories = new Set();
             var uniqueCompetitors = extractUniqueCompetitors(appData.allArticles);
