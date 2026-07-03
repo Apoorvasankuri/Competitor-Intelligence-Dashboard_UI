@@ -354,7 +354,7 @@
                        };
                     });
                     appData.currentPage = 1;
-                    switchTab('brief');
+                    switchTab('executive');
                 } else { throw new Error('Invalid API response'); }
                 appData.isLoading = false;
             } catch (error) {
@@ -400,7 +400,10 @@
             if (tabName === 'brief') c.innerHTML = renderExecutiveBrief();
             else if (tabName === 'sbu_storylines') c.innerHTML = renderSBUStorylines();
             else if (tabName === 'competitor_strategy') c.innerHTML = renderCompetitorStrategy();
-            else if (tabName === 'client_tracker') c.innerHTML = renderClientAuthorityTracker();
+            else if (tabName === 'client_tracker') {
+                c.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏛</div><h3>Client / Authority Tracker Pending</h3><p>This tab is not wired correctly yet. Backend data can still be tested from the other tabs.</p></div>';
+         }
+
             else if (tabName === 'executive') c.innerHTML = renderExecutiveSummary();
             else if (tabName === 'competitor') { c.innerHTML = renderCompetitorView(); setupFilterHandlers(); }
             else if (tabName === 'industry') c.innerHTML = renderIndustryView();
@@ -614,7 +617,7 @@ function renderExecutiveSummary() {
             SBU_STORYLINE_ORDER.forEach(function(sbu) {
                 var sbuLower = sbu.toLowerCase();
                 var list = working.filter(function(a) {
-                    return (a.sbu || '').toLowerCase().indexOf(sbuLower) !== -1;
+                    return (a.sbu || []).map(function(x) { return String(x).toLowerCase(); }).indexOf(sbuLower)Case().indexOf(sbuLower) !== -1;
                 });
                 list.sort(function(a, b) {
                     if ((b.eventImpactScore || 0) !== (a.eventImpactScore || 0)) return (b.eventImpactScore || 0) - (a.eventImpactScore || 0);
@@ -921,7 +924,7 @@ clusterReduced.forEach(function(article) {
             var topCategories = _topCounts(articles, function(a) { return a.category || ''; }, 3)
                 .map(function(o) { return { category: o.key, count: o.count }; });
             var topSBUs = _topCounts(articles, function(a) {
-                return (a.sbu || '').split(',').map(function(s) { return s.trim(); });
+                return Array.isArray(a.sbu) ? a.sbu : String(a.sbu || '').split(',').map(function(s) { return s.trim(); });
             }, 3).map(function(o) { return { sbu: o.key, count: o.count }; });
             var topGeographies = _topCounts(articles, function(a) { return a.geography || ''; }, 3)
                 .map(function(o) { return { geography: o.key, count: o.count }; });
