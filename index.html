@@ -401,7 +401,13 @@
             var c = document.getElementById('contentArea');
             if (appData.allArticles.length === 0) { c.innerHTML = renderEmptyState(); return; }
             if (tabName === 'brief') c.innerHTML = renderExecutiveSummary();
-            else if (tabName === 'sbu_storylines') c.innerHTML = renderSBUStorylines();
+            else if (tabName === 'sbu_storylines') {
+    if (typeof renderSBUStorylines === 'function') {
+        c.innerHTML = renderSBUStorylines();
+    } else {
+        c.innerHTML = renderExecutiveSummary();
+    }
+}
             else if (tabName === 'competitor_strategy') c.innerHTML = renderCompetitorStrategy();
             else if (tabName === 'client_tracker') {
                 c.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏛</div><h3>Client / Authority Tracker Pending</h3><p>This tab is not wired correctly yet. Backend data can still be tested from the other tabs.</p></div>';
