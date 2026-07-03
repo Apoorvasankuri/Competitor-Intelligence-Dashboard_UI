@@ -397,7 +397,8 @@
             });
             var c = document.getElementById('contentArea');
             if (appData.allArticles.length === 0) { c.innerHTML = renderEmptyState(); return; }
-            if (tabName === 'brief') c.innerHTML = renderExecutiveBrief();
+            if (tabName === 'brief') c.innerHTML = renderExecutiveSummary();
+            ``
             else if (tabName === 'sbu_storylines') c.innerHTML = renderSBUStorylines();
             else if (tabName === 'competitor_strategy') c.innerHTML = renderCompetitorStrategy();
             else if (tabName === 'client_tracker') {
