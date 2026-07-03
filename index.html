@@ -405,7 +405,12 @@
             else if (tabName === 'competitor') { c.innerHTML = renderCompetitorView(); setupFilterHandlers(); }
             else if (tabName === 'industry') c.innerHTML = renderIndustryView();
             else if (tabName === 'assign') c.innerHTML = renderAssignTab();
-            else if (tabName === 'admin') { c.innerHTML = renderAdminTab(); loadUsers(); }
+            else if (tabName === 'admin') {
+                c.innerHTML = renderAdminTab();
+                loadUsers();
+                loadSystemHealth();
+                loadRecentPipelineRuns();
+            }
         }
         
         var CATEGORY_ORDER = [
@@ -1480,7 +1485,24 @@ function renderAdminTab() {
         '</div>' +
         '<div id="userFormWrap"></div>' +
         '<div id="usersTableWrap"><div style="text-align:center;padding:40px;color:var(--text-secondary);">Loading users...</div></div>' +
-        '</div>';
+
+'<div style="margin-top:48px;">' +
+    '<h2 style="font-family:Playfair Display,serif;font-size:24px;color:var(--navy);margin-bottom:20px;">System Health</h2>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">' +
+        '<div id="healthFreshnessBox" style="background:white;border:1px solid var(--champagne-silt);border-radius:8px;padding:20px;">' +
+            '<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Data Freshness</div>' +
+            '<div style="font-size:16px;font-weight:600;color:var(--navy);">Loading...</div>' +
+        '</div>' +
+        '<div id="healthPipelineBox" style="background:white;border:1px solid var(--champagne-silt);border-radius:8px;padding:20px;">' +
+            '<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Pipeline Status</div>' +
+            '<div style="font-size:16px;font-weight:600;color:var(--navy);">Loading...</div>' +
+        '</div>' +
+    '</div>' +
+    '<h3 style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:12px;">Recent Pipeline Runs</h3>' +
+    '<div id="pipelineRunsWrap"><div style="text-align:center;padding:20px;color:var(--text-secondary);">Loading pipeline runs...</div></div>' +
+'</div>' +
+
+'</div>';
 }
 
 function showAddUserForm(user) {
@@ -1589,6 +1611,96 @@ async function loadUsers() {
         }
     } catch (e) {
         document.getElementById('usersTableWrap').innerHTML = '<div style="color:red;padding:20px;">Error loading users: ' + e.message + '</div>';
+    }
+}
+
+async function loadSystemHealth() {
+    try {
+        var response = await fetch(LOCAL_API + '/api/health/deep');
+        if (!response.ok) throw new Error('Health check failed');
+        var result = await response.json();
+
+        var freshnessBox = document.getElementById('healthFreshnessBox');
+        var pipelineBox = document.getElementById('healthPipelineBox');
+
+        if (freshnessBox) {
+            var latest = result.latest_processed_date
+                ? new Date(result.latest_processed_date).toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+                : 'No data';
+            var count = result.processed_articles_count || 0;
+            freshnessBox.innerHTML =
+                '<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Data Freshness</div>' +
+                '<div style="font-size:15px;font-weight:600;color:var(--navy);margin-bottom:4px;">' + latest + '</div>' +
+                '<div style="font-size:12px;color:var(--text-secondary);">' + count.toLocaleString() + ' processed articles</div>';
+        }
+
+        if (pipelineBox) {
+            var statusColor = '#1B5E20';
+            var statusLabel = 'Healthy';
+            if (result.status === 'warning') { statusColor = '#8B7335'; statusLabel = 'Warning'; }
+            else if (result.status === 'error') { statusColor = '#C62828'; statusLabel = 'Error'; }
+            var lastRun = result.last_pipeline_run;
+            var runInfo = lastRun ? (lastRun.stage + ' — ' + lastRun.status + ' — ' + (lastRun.pipeline_id || '')) : 'No pipeline runs recorded yet';
+            pipelineBox.innerHTML =
+                '<div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Pipeline Status</div>' +
+                '<div style="font-size:15px;font-weight:600;color:' + statusColor + ';margin-bottom:4px;">' + statusLabel + '</div>' +
+                '<div style="font-size:12px;color:var(--text-secondary);">' + runInfo + '</div>';
+        }
+    } catch (e) {
+        var freshnessBox = document.getElementById('healthFreshnessBox');
+        var pipelineBox = document.getElementById('healthPipelineBox');
+        if (freshnessBox) freshnessBox.innerHTML = '<div style="font-size:14px;color:#C62828;">System status unavailable</div>';
+        if (pipelineBox) pipelineBox.innerHTML = '<div style="font-size:14px;color:#C62828;">System status unavailable</div>';
+    }
+}
+
+async function loadRecentPipelineRuns() {
+    try {
+        var response = await fetch(LOCAL_API + '/api/admin/pipeline-runs?token=' + kecToken);
+        if (!response.ok) throw new Error('Failed to load pipeline runs');
+        var result = await response.json();
+
+        var wrap = document.getElementById('pipelineRunsWrap');
+        if (!wrap) return;
+
+        var runs = result.runs || [];
+        if (runs.length === 0) {
+            wrap.innerHTML = '<div style="padding:20px;color:var(--text-secondary);font-style:italic;">No pipeline runs recorded yet</div>';
+            return;
+        }
+
+        var html = '<table style="width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;">' +
+            '<thead><tr style="background:var(--navy);">' +
+            '<th style="padding:12px;text-align:left;font-size:11px;font-weight:600;color:white;text-transform:uppercase;">Run ID</th>' +
+            '<th style="padding:12px;text-align:left;font-size:11px;font-weight:600;color:white;text-transform:uppercase;">Stage</th>' +
+            '<th style="padding:12px;text-align:left;font-size:11px;font-weight:600;color:white;text-transform:uppercase;">Status</th>' +
+            '<th style="padding:12px;text-align:right;font-size:11px;font-weight:600;color:white;text-transform:uppercase;">In</th>' +
+            '<th style="padding:12px;text-align:right;font-size:11px;font-weight:600;color:white;text-transform:uppercase;">Out</th>' +
+            '<th style="padding:12px;text-align:left;font-size:11px;font-weight:600;color:white;text-transform:uppercase;">Started</th>' +
+            '<th style="padding:12px;text-align:left;font-size:11px;font-weight:600;color:white;text-transform:uppercase;">Error</th>' +
+            '</tr></thead><tbody>';
+
+        runs.forEach(function(r, i) {
+            var shade = i % 2 === 0 ? '#FFFFFF' : '#F9F8F3';
+            var statusColor = r.status === 'success' ? '#1B5E20' : r.status === 'failed' ? '#C62828' : '#8B7335';
+            var started = r.started_at ? new Date(r.started_at).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '-';
+            var err = r.error_message ? (r.error_message.substring(0, 60) + (r.error_message.length > 60 ? '...' : '')) : '-';
+            html += '<tr style="background:' + shade + ';">' +
+                '<td style="padding:10px 12px;font-size:12px;font-family:monospace;color:var(--navy);">' + (r.pipeline_id || '-') + '</td>' +
+                '<td style="padding:10px 12px;font-size:12px;color:var(--text-body);">' + (r.stage || '-') + '</td>' +
+                '<td style="padding:10px 12px;font-size:12px;font-weight:700;color:' + statusColor + ';text-transform:uppercase;">' + (r.status || '-') + '</td>' +
+                '<td style="padding:10px 12px;font-size:12px;text-align:right;color:var(--text-body);">' + (r.articles_in !== null ? r.articles_in : '-') + '</td>' +
+                '<td style="padding:10px 12px;font-size:12px;text-align:right;color:var(--text-body);">' + (r.articles_out !== null ? r.articles_out : '-') + '</td>' +
+                '<td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);">' + started + '</td>' +
+                '<td style="padding:10px 12px;font-size:12px;color:#C62828;">' + err + '</td>' +
+            '</tr>';
+        });
+
+        html += '</tbody></table>';
+        wrap.innerHTML = html;
+    } catch (e) {
+        var wrap = document.getElementById('pipelineRunsWrap');
+        if (wrap) wrap.innerHTML = '<div style="padding:20px;color:#C62828;">Failed to load pipeline runs: ' + e.message + '</div>';
     }
 }
 
