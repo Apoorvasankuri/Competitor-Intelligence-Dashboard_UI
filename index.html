@@ -405,7 +405,7 @@
                                 if (tabName === 'admin' && btn.textContent.indexOf('Admin') !== -1) btn.classList.add('active');
             });
             var c = document.getElementById('contentArea');
-            if (appData.allArticles.length === 0) { c.innerHTML = renderEmptyState(); return; }
+            if (appData.allArticles.length === 0 && tabName !== 'civil_capex' && tabName !== 'admin') { c.innerHTML = renderEmptyState(); return; }
             if (tabName === 'brief') c.innerHTML = renderExecutiveSummary();
             else if (tabName === 'sbu_storylines') {
     if (typeof renderSBUStorylines === 'function') {
