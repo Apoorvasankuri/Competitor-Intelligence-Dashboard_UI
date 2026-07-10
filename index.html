@@ -505,6 +505,9 @@ function renderExecutiveSummary() {
         }
     });
 
+    return renderExecutiveSummaryBody(recent);
+}
+
     function renderExecutiveBrief() {
             var fourteenDaysAgo = new Date();
             fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
@@ -727,6 +730,7 @@ function renderExecutiveSummary() {
 
 
 
+    function renderExecutiveSummaryBody(recent) {
     var grouped = {};
     recent.forEach(function(a) {
         var cat = (a.category || 'general').toLowerCase();
