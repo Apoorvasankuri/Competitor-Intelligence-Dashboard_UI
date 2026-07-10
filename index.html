@@ -197,7 +197,7 @@
                 var kecToken = localStorage.getItem('kec_token');
                 var kecUser = JSON.parse(localStorage.getItem('kec_user') || 'null');
                 if (!kecToken || !kecUser) { window.location.href = 'login.html'; }
-                var appData = { allArticles: [], currentTab: 'executive', filters: { sbu: 'All', competitor: 'All', category: 'All', period: 'All' }, isLoading: false, currentPage: 1, pageSize: 20 };
+                var appData = { allArticles: [], currentTab: 'executive', filters: { sbu: 'All', competitor: 'All', category: 'All', period: 'All' }, isLoading: false, currentPage: 1, pageSize: 20, storylineSBUFilter: 'All', competitorStrategySBUFilter: 'All' };
         var COMPETITOR_ALIAS_MAP = {
             'larsen & toubro': 'L&T', 'larsen and toubro': 'L&T', 'l&t ltd': 'L&T', 'l&t limited': 'L&T', 'l&t construction': 'L&T', 'l&t power': 'L&T', 'l&t metro': 'L&T', 'l&t': 'L&T',
             'tata projects ltd': 'Tata Projects', 'tata projects limited': 'Tata Projects', 'tata projects': 'Tata Projects',
@@ -609,6 +609,33 @@ function renderExecutiveSummary() {
         }
 
         function renderSBUStorylines() {
+            // Item 3: determine which SBUs this user may see.
+            // Admins (or sbu_profile 'Admin') see all; others are scoped to
+            // their assigned sbu_profile. The dropdown only appears when more
+            // than one SBU is visible.
+            var allowedSBUs = SBU_STORYLINE_ORDER.slice();
+            var isAdminUser = (typeof kecUser !== 'undefined' && kecUser &&
+                (kecUser.is_admin || (kecUser.sbu_profile || '').trim().toLowerCase() === 'admin'));
+            if (!isAdminUser && typeof kecUser !== 'undefined' && kecUser && kecUser.sbu_profile) {
+                var userSBUs = kecUser.sbu_profile.split(',').map(function(s) { return s.trim().toLowerCase(); });
+                allowedSBUs = SBU_STORYLINE_ORDER.filter(function(sbu) {
+                    return userSBUs.indexOf(sbu.toLowerCase()) !== -1;
+                });
+                if (allowedSBUs.length === 0) allowedSBUs = SBU_STORYLINE_ORDER.slice();
+            }
+
+            // Single-SBU users are auto-locked to their one SBU.
+            if (allowedSBUs.length === 1) appData.storylineSBUFilter = allowedSBUs[0];
+
+            // The set of SBUs actually rendered = allowed ∩ selected filter.
+            var visibleSBUs = allowedSBUs;
+            if (appData.storylineSBUFilter && appData.storylineSBUFilter !== 'All') {
+                visibleSBUs = allowedSBUs.filter(function(sbu) {
+                    return sbu === appData.storylineSBUFilter;
+                });
+                if (visibleSBUs.length === 0) visibleSBUs = allowedSBUs;
+            }
+
             var lookbackDate = new Date();
             lookbackDate.setDate(lookbackDate.getDate() - STORYLINE_LOOKBACK_DAYS);
 
@@ -636,7 +663,7 @@ function renderExecutiveSummary() {
             var storylines = {};
             var anyEvents = false;
 
-            SBU_STORYLINE_ORDER.forEach(function(sbu) {
+            visibleSBUs.forEach(function(sbu) {
                 var sbuLower = sbu.toLowerCase();
                 var list = working.filter(function(a) {
                     return (a.sbu || []).map(function(x) { return String(x).toLowerCase(); }).indexOf(sbuLower) !== -1;
@@ -656,9 +683,24 @@ function renderExecutiveSummary() {
                 return '<div class="empty-state"><div class="empty-state-icon">🏗</div><h3>No SBU Storylines Yet</h3><p>No high-impact SBU-specific events in the last 14 days.</p></div>';
             }
 
-            var html = '<div class="articles-container">';
+            var html = '';
 
-            SBU_STORYLINE_ORDER.forEach(function(sbu) {
+            // Item 3: SBU filter dropdown — only shown when more than one SBU
+            // is available to this user (single-SBU users are auto-locked).
+            if (allowedSBUs.length > 1) {
+                html += '<div style="margin-bottom:16px; display:flex; align-items:center; gap:10px;">';
+                html += '<label for="storylineSBUSelect" style="font-size:13px; font-weight:600; color:var(--navy);">SBU:</label>';
+                html += '<select id="storylineSBUSelect" onchange="onStorylineSBUChange(this.value)" style="padding:6px 12px; border:1.5px solid var(--champagne-silt); border-radius:6px; font-size:13px; font-family:Montserrat,sans-serif; color:var(--text-body); background:#fff; cursor:pointer;">';
+                html += '<option value="All"' + (appData.storylineSBUFilter === 'All' ? ' selected' : '') + '>All my SBUs</option>';
+                allowedSBUs.forEach(function(sbu) {
+                    html += '<option value="' + sbu + '"' + (appData.storylineSBUFilter === sbu ? ' selected' : '') + '>' + sbu + '</option>';
+                });
+                html += '</select></div>';
+            }
+
+            html += '<div class="articles-container">';
+
+            visibleSBUs.forEach(function(sbu) {
                 var events = storylines[sbu];
 
                 html += '<div class="article-card" style="border-top:3px solid var(--blue-border); background:var(--watermark-edge);">';
@@ -726,6 +768,11 @@ function renderExecutiveSummary() {
 
             html += '</div>';
             return html;
+        }
+
+        function onStorylineSBUChange(value) {
+            appData.storylineSBUFilter = value;
+            document.getElementById('contentArea').innerHTML = renderSBUStorylines();
         }
 
 
@@ -985,10 +1032,47 @@ clusterReduced.forEach(function(article) {
         }
 
         function renderCompetitorStrategy() {
+            // Item 4: same SBU auto-scope + filter as SBU Storylines.
+            // Non-admins are already server-scoped to their SBU profile; this
+            // narrows further when a specific SBU is chosen from the dropdown,
+            // and bounds the dropdown options to what the user may see.
+            var csAllowedSBUs = SBU_STORYLINE_ORDER.slice();
+            var csIsAdmin = (typeof kecUser !== 'undefined' && kecUser &&
+                (kecUser.is_admin || (kecUser.sbu_profile || '').trim().toLowerCase() === 'admin'));
+            if (!csIsAdmin && typeof kecUser !== 'undefined' && kecUser && kecUser.sbu_profile) {
+                var csUserSBUs = kecUser.sbu_profile.split(',').map(function(s) { return s.trim().toLowerCase(); });
+                csAllowedSBUs = SBU_STORYLINE_ORDER.filter(function(sbu) {
+                    return csUserSBUs.indexOf(sbu.toLowerCase()) !== -1;
+                });
+                if (csAllowedSBUs.length === 0) csAllowedSBUs = SBU_STORYLINE_ORDER.slice();
+            }
+            if (csAllowedSBUs.length === 1) appData.competitorStrategySBUFilter = csAllowedSBUs[0];
+
             var pool = extractCompetitorEventPool();
 
+            // Restrict pool to the user's allowed SBUs, then to the selected SBU.
+            function articleInSBUs(a, sbuList) {
+                var lowered = sbuList.map(function(s) { return s.toLowerCase(); });
+                return (a.sbu || []).some(function(x) {
+                    return lowered.indexOf(String(x).toLowerCase()) !== -1;
+                });
+            }
+            if (!csIsAdmin) {
+                pool = pool.filter(function(a) { return articleInSBUs(a, csAllowedSBUs); });
+            }
+            if (appData.competitorStrategySBUFilter && appData.competitorStrategySBUFilter !== 'All') {
+                pool = pool.filter(function(a) {
+                    return articleInSBUs(a, [appData.competitorStrategySBUFilter]);
+                });
+            }
+
             if (pool.length === 0) {
-                return '<div class="empty-state"><div class="empty-state-icon">🏢</div><h3>No Competitor Strategy Yet</h3><p>No high-impact competitor events in the last 90 days.</p></div>';
+                var csEmpty = '';
+                if (csAllowedSBUs.length > 1) {
+                    csEmpty += renderCompetitorStrategySBUDropdown(csAllowedSBUs);
+                }
+                csEmpty += '<div class="empty-state"><div class="empty-state-icon">🏢</div><h3>No Competitor Strategy Yet</h3><p>No high-impact competitor events for the selected SBU in the last 90 days.</p></div>';
+                return csEmpty;
             }
 
             var grouped = groupArticlesByCompetitor(pool);
@@ -1002,6 +1086,10 @@ clusterReduced.forEach(function(article) {
             html += '<h2 style="margin:0; font-family:Georgia,serif; color:var(--navy);">Competitor Strategy</h2>';
             html += '<p style="margin:4px 0 0; font-size:13px; color:var(--text-secondary);">Last ' + COMPETITOR_STRATEGY_LOOKBACK_DAYS + ' days · High-impact events only</p>';
             html += '</div>';
+
+            if (csAllowedSBUs.length > 1) {
+                html += renderCompetitorStrategySBUDropdown(csAllowedSBUs);
+            }
 
             html += '<div class="articles-container">';
 
@@ -1046,6 +1134,19 @@ clusterReduced.forEach(function(article) {
                     }
                     html += '<div style="font-size:13px; color:var(--text-body); line-height:1.6;">' + summary + '</div>';
 
+                    // Item 4: when an article is tagged with multiple competitors it
+                    // appears under each one's card; the summary text may lead with a
+                    // different competitor. Show the others explicitly so the heading /
+                    // summary mismatch reads as intentional, not garbled.
+                    if (article.competitors && article.competitors.length > 1) {
+                        var others = article.competitors.filter(function(c) {
+                            return c && c !== '-' && normalizeCompetitor(c) !== p.name;
+                        });
+                        if (others.length > 0) {
+                            html += '<div style="margin-top:4px; font-size:11px; color:var(--text-secondary); font-style:italic;">Also involves: ' + others.join(', ') + '</div>';
+                        }
+                    }
+
                     var d = new Date(article.date);
                     var fd = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                     html += '<div style="margin-top:6px; font-size:12px; color:var(--text-secondary); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">';
@@ -1072,6 +1173,23 @@ clusterReduced.forEach(function(article) {
 
             html += '</div>';
             return html;
+        }
+
+        function renderCompetitorStrategySBUDropdown(allowedSBUs) {
+            var h = '<div style="margin-bottom:16px; display:flex; align-items:center; gap:10px;">';
+            h += '<label for="csSBUSelect" style="font-size:13px; font-weight:600; color:var(--navy);">SBU:</label>';
+            h += '<select id="csSBUSelect" onchange="onCompetitorStrategySBUChange(this.value)" style="padding:6px 12px; border:1.5px solid var(--champagne-silt); border-radius:6px; font-size:13px; font-family:Montserrat,sans-serif; color:var(--text-body); background:#fff; cursor:pointer;">';
+            h += '<option value="All"' + (appData.competitorStrategySBUFilter === 'All' ? ' selected' : '') + '>All my SBUs</option>';
+            allowedSBUs.forEach(function(sbu) {
+                h += '<option value="' + sbu + '"' + (appData.competitorStrategySBUFilter === sbu ? ' selected' : '') + '>' + sbu + '</option>';
+            });
+            h += '</select></div>';
+            return h;
+        }
+
+        function onCompetitorStrategySBUChange(value) {
+            appData.competitorStrategySBUFilter = value;
+            document.getElementById('contentArea').innerHTML = renderCompetitorStrategy();
         }
 
         function renderCompetitorView() {
