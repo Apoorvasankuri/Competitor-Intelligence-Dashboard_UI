@@ -619,11 +619,49 @@ function renderExecutiveSummary() {
             return html;
         }
 
-        function getAuthorityItemsForSBU(sbu) {
+        function dedupeSimilarArticles(list) {
+            var stopWords = new Set(['a','an','the','and','or','in','on','at','to','for','of','with','by','is','was','has','this','that','their','these','will','been','also','from']);
+            function jaccardSimilarity(text1, text2) {
+                var w1 = text1.toLowerCase().split(/\W+/).filter(function(w) { return w.length > 3 && !stopWords.has(w); });
+                var w2 = text2.toLowerCase().split(/\W+/).filter(function(w) { return w.length > 3 && !stopWords.has(w); });
+                if (!w1.length || !w2.length) return 0;
+                var set2 = new Set(w2);
+                var intersection = w1.filter(function(w) { return set2.has(w); }).length;
+                var union = new Set(w1.concat(w2)).size;
+                return union > 0 ? intersection / union : 0;
+            }
+            var kept = [];
+            list.forEach(function(article) {
+                var hasCluster = !(article.clusterId === null || article.clusterId === undefined || article.clusterId === '');
+                var isDuplicate = !hasCluster && kept.some(function(k) {
+                    var summary1 = article.summary || article.title || '';
+                    var summary2 = k.summary || k.title || '';
+                    var jaccard = jaccardSimilarity(summary1, summary2);
+                    if (jaccard > 0.35) return true;
+                    var sharedCompetitor = (article.competitors || []).length > 0 && (k.competitors || []).length > 0 &&
+                        article.competitors.some(function(c) { return k.competitors.indexOf(c) !== -1; });
+                    if (!sharedCompetitor) return false;
+                    var val1 = article.contractValue, val2 = k.contractValue;
+                    if (val1 && val2 && Math.abs(val1 - val2) / Math.max(val1, val2) < 0.10) return true;
+                    if (sharedCompetitor && jaccard > 0.20) return true;
+                    if (sharedCompetitor && article.geography && k.geography && article.geography.toLowerCase() === k.geography.toLowerCase()) return true;
+                    return false;
+                });
+                if (!isDuplicate) kept.push(article);
+            });
+            return kept;
+        }
+
+        function getDedupedEventList(list) {
+            return dedupeSimilarArticles(getExecutiveClusterList(list));
+        }
+
+        function getAuthorityItemsForSBU(sbu, excludeLinks) {
             var lookback = new Date();
             lookback.setDate(lookback.getDate() - CLIENT_TRACKER_LOOKBACK_DAYS);
             var AUTHORITY_QUERY_TYPES = { 'site_client_authority': true, 'site_government_policy': true };
             var sbuLower = sbu.toLowerCase();
+            var exclude = excludeLinks || new Set();
 
             var items = appData.allArticles.filter(function(a) {
                 if (new Date(a.date) < lookback) return false;
@@ -632,6 +670,7 @@ function renderExecutiveSummary() {
                 var hasAuthorityLens = AUTHORITY_QUERY_TYPES[a.searchQueryType] === true;
                 var hasDetectedAuthority = a.detectedClientAuthority && a.detectedClientAuthority.trim() !== '';
                 if (!(hasAuthorityLens || hasDetectedAuthority)) return false;
+                if (exclude.has(a.link)) return false;
                 return (a.sbu || []).map(function(x) { return String(x).toLowerCase(); }).indexOf(sbuLower) !== -1;
             });
 
@@ -640,7 +679,7 @@ function renderExecutiveSummary() {
                 return new Date(b.date) - new Date(a.date);
             });
 
-            return (typeof getExecutiveClusterList === 'function' ? getExecutiveClusterList(items) : items).slice(0, CLIENT_TRACKER_ITEMS_PER_SBU_STORYLINE);
+            return getDedupedEventList(items).slice(0, CLIENT_TRACKER_ITEMS_PER_SBU_STORYLINE);
         }
 
         function renderSBUStorylines() {
@@ -698,6 +737,7 @@ function renderExecutiveSummary() {
             var storylines = {};
             var anyEvents = false;
 
+            var excludeLinksBySBU = {};
             visibleSBUs.forEach(function(sbu) {
                 var sbuLower = sbu.toLowerCase();
                 var list = working.filter(function(a) {
@@ -712,8 +752,9 @@ function renderExecutiveSummary() {
                     if ((b.rankScore || 0) !== (a.rankScore || 0)) return (b.rankScore || 0) - (a.rankScore || 0);
                     return new Date(b.date) - new Date(a.date);
                 });
-                var reduced = getExecutiveClusterList(list).slice(0, STORYLINE_MAX_EVENTS_PER_SBU);
+                var reduced = getDedupedEventList(list).slice(0, STORYLINE_MAX_EVENTS_PER_SBU);
                 storylines[sbu] = reduced;
+                excludeLinksBySBU[sbu] = new Set(reduced.map(function(a) { return a.link; }));
                 if (reduced.length > 0) anyEvents = true;
             });
 
@@ -800,7 +841,7 @@ function renderExecutiveSummary() {
                 // Item 2: authority/client activity relevant to this SBU, shown
                 // to all users (not admin-gated) — the standalone Client/Authority
                 // Tracker tab (admin-only) covers the full cross-SBU view.
-                var sbuAuthorityItems = getAuthorityItemsForSBU(sbu);
+                var sbuAuthorityItems = getAuthorityItemsForSBU(sbu, excludeLinksBySBU[sbu]);
                 if (sbuAuthorityItems.length > 0) {
                     html += '<div style="margin-top:16px; padding-top:16px; border-top:1px dashed var(--champagne-silt);">';
                     html += '<div style="font-size:12px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Client / Authority Activity</div>';
