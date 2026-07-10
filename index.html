@@ -179,7 +179,12 @@
             <button class="tab-btn active" onclick="switchTab('brief')">Executive Brief</button>
             <button class="tab-btn" onclick="switchTab('sbu_storylines')">SBU Storylines</button>
             <button class="tab-btn" onclick="switchTab('competitor_strategy')">Competitor Strategy</button>
-            <button class="tab-btn" onclick="switchTab('client_tracker')">Client / Authority Tracker</button>
+            if (kecUser && kecUser.is_admin) {
+                var adminBtn = document.getElementById('adminTabBtn');
+                if (adminBtn) adminBtn.style.display = 'inline-block';
+                var clientTrackerBtn = document.getElementById('clientTrackerTabBtn');
+                if (clientTrackerBtn) clientTrackerBtn.style.display = 'inline-block';
+            }
             <button class="tab-btn" onclick="switchTab('executive')">Executive Summary</button>
             <button class="tab-btn" onclick="switchTab('competitor')">Competitor &amp; SBU</button>
             <button class="tab-btn" onclick="switchTab('industry')">Industry</button>
@@ -325,6 +330,7 @@
                            competitors: normalizeArticleCompetitors(parseList(row.competitor_tagging || '')), 
                            summary: row.summary || row.kec_business_summary || '',
                            rankScore: row.rank_score || 0,
+                           competitorTier: (row.competitor_tier === null || row.competitor_tier === undefined) ? 4 : Number(row.competitor_tier),
                            contractValue: row.contract_value_inr_crore || null,
                            geography: row.geography || null,
                            sourceDomain: row.source_domain || null,
@@ -416,7 +422,9 @@
 }
             else if (tabName === 'competitor_strategy') c.innerHTML = renderCompetitorStrategy();
             else if (tabName === 'client_tracker') {
-                if (typeof renderClientAuthorityTracker === 'function') {
+                if (!(kecUser && kecUser.is_admin)) {
+                    c.innerHTML = renderEmptyState();
+                } else if (typeof renderClientAuthorityTracker === 'function') {
                     c.innerHTML = renderClientAuthorityTracker();
                 } else {
                     c.innerHTML = renderEmptyState();
@@ -544,6 +552,9 @@ function renderExecutiveSummary() {
             Object.keys(grouped).forEach(function(cat) {
                 grouped[cat].sort(function(a, b) {
                     if ((b.eventImpactScore || 0) !== (a.eventImpactScore || 0)) return (b.eventImpactScore || 0) - (a.eventImpactScore || 0);
+                    var tierA = (a.competitorTier === undefined || a.competitorTier === null) ? 4 : a.competitorTier;
+                    var tierB = (b.competitorTier === undefined || b.competitorTier === null) ? 4 : b.competitorTier;
+                    if (tierA !== tierB) return tierA - tierB;
                     if ((b.clusterRankScore || 0) !== (a.clusterRankScore || 0)) return (b.clusterRankScore || 0) - (a.clusterRankScore || 0);
                     if ((b.rankScore || 0) !== (a.rankScore || 0)) return (b.rankScore || 0) - (a.rankScore || 0);
                     return new Date(b.date) - new Date(a.date);
@@ -586,9 +597,8 @@ function renderExecutiveSummary() {
 
                     html += '<div style="font-size:14px; color:var(--text-body); line-height:1.7;">' + summary + '</div>';
 
-                    if (Number(article.clusterArticleCount || 1) > 1) {
-                        var conf = article.clusterSourceConfidence || 'Medium';
-                        html += '<div style="margin-top:4px; font-size:12px; color:var(--text-secondary); font-style:italic;">Backed by ' + Number(article.clusterArticleCount) + ' sources | Confidence: ' + conf + '</div>';
+                    if (article.contractValue) {
+                        html += '<div style="margin-top:4px; font-size:13px; color:var(--navy); font-weight:600;">₹' + Number(article.contractValue).toLocaleString('en-IN') + ' Cr</div>';
                     }
 
                     var d = new Date(article.date);
@@ -599,10 +609,6 @@ function renderExecutiveSummary() {
                         html += '<span style="color:var(--champagne-silt);">|</span>';
                         html += '<span style="font-style:italic;">' + article.source + '</span>';
                     }
-                    html += getImpactBadge(article);
-                    html += getSourceBadge(article);
-                    if (typeof getSearchLensBadge === 'function') html += getSearchLensBadge(article);
-                    html += getClusterBadge(article);
                     html += '</div>';
 
                     html += '</li>';
@@ -677,6 +683,9 @@ function renderExecutiveSummary() {
                 });
                 list.sort(function(a, b) {
                     if ((b.eventImpactScore || 0) !== (a.eventImpactScore || 0)) return (b.eventImpactScore || 0) - (a.eventImpactScore || 0);
+                    var tierA = (a.competitorTier === undefined || a.competitorTier === null) ? 4 : a.competitorTier;
+                    var tierB = (b.competitorTier === undefined || b.competitorTier === null) ? 4 : b.competitorTier;
+                    if (tierA !== tierB) return tierA - tierB;
                     if ((b.clusterRankScore || 0) !== (a.clusterRankScore || 0)) return (b.clusterRankScore || 0) - (a.clusterRankScore || 0);
                     if ((b.rankScore || 0) !== (a.rankScore || 0)) return (b.rankScore || 0) - (a.rankScore || 0);
                     return new Date(b.date) - new Date(a.date);
@@ -738,9 +747,8 @@ function renderExecutiveSummary() {
 
                     html += '<div style="font-size:14px; color:var(--text-body); line-height:1.7;">' + summary + '</div>';
 
-                    if (Number(article.clusterArticleCount || 1) > 1) {
-                        var conf = article.clusterSourceConfidence || 'Medium';
-                        html += '<div style="margin-top:4px; font-size:12px; color:var(--text-secondary); font-style:italic;">Backed by ' + Number(article.clusterArticleCount) + ' sources | Confidence: ' + conf + '</div>';
+                    if (article.contractValue) {
+                        html += '<div style="margin-top:4px; font-size:13px; color:var(--navy); font-weight:600;">₹' + Number(article.contractValue).toLocaleString('en-IN') + ' Cr</div>';
                     }
 
                     var d = new Date(article.date);
@@ -751,11 +759,6 @@ function renderExecutiveSummary() {
                         html += '<span style="color:var(--champagne-silt);">|</span>';
                         html += '<span style="font-style:italic;">' + article.source + '</span>';
                     }
-                    html += getImpactBadge(article);
-                    html += getSourceBadge(article);
-                    if (typeof getSearchLensBadge === 'function') html += getSearchLensBadge(article);
-                    html += getClusterBadge(article);
-                    if (typeof getMultiSignalBadge === 'function') html += getMultiSignalBadge(article);
                     html += '</div>';
 
                     if (article.competitors && article.competitors.length > 0) {
@@ -770,7 +773,38 @@ function renderExecutiveSummary() {
                     html += '</li>';
                 });
 
-                html += '</ul></div>';
+                html += '</ul>';
+
+                // Item 2: authority/client activity relevant to this SBU, shown
+                // to all users (not admin-gated) — the standalone Client/Authority
+                // Tracker tab (admin-only) covers the full cross-SBU view.
+                var sbuAuthorityItems = getAuthorityItemsForSBU(sbu);
+                if (sbuAuthorityItems.length > 0) {
+                    html += '<div style="margin-top:16px; padding-top:16px; border-top:1px dashed var(--champagne-silt);">';
+                    html += '<div style="font-size:12px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px;">Client / Authority Activity</div>';
+                    html += '<ul style="list-style:none; padding:0; margin:0;">';
+                    sbuAuthorityItems.forEach(function(article) {
+                        html += '<li class="exec-bullet" style="padding: 12px 0; border-bottom: 1px solid var(--champagne-silt);">';
+                        var asummary = article.clusterSummary || article.summary || article.title || 'No summary available.';
+                        html += '<div style="font-size:13px; color:var(--text-body); line-height:1.6;">' + asummary + '</div>';
+                        if (article.contractValue) {
+                            html += '<div style="margin-top:4px; font-size:13px; color:var(--navy); font-weight:600;">₹' + Number(article.contractValue).toLocaleString('en-IN') + ' Cr</div>';
+                        }
+                        var ad = new Date(article.date);
+                        var afd = ad.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        html += '<div style="margin-top:6px; font-size:12px; color:var(--text-secondary); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">';
+                        html += '<span>' + afd + '</span>';
+                        if (article.source && article.source !== 'Unknown Source') {
+                            html += '<span style="color:var(--champagne-silt);">|</span>';
+                            html += '<span style="font-style:italic;">' + article.source + '</span>';
+                        }
+                        html += '</div>';
+                        html += '</li>';
+                    });
+                    html += '</ul></div>';
+                }
+
+                html += '</div>';
             });
 
             html += '</div>';
@@ -797,6 +831,9 @@ function renderExecutiveSummary() {
     Object.keys(grouped).forEach(function(cat) {
     grouped[cat].sort(function(a, b) {
         if ((b.eventImpactScore || 0) !== (a.eventImpactScore || 0)) return (b.eventImpactScore || 0) - (a.eventImpactScore || 0);
+        var tierA = (a.competitorTier === undefined || a.competitorTier === null) ? 4 : a.competitorTier;
+        var tierB = (b.competitorTier === undefined || b.competitorTier === null) ? 4 : b.competitorTier;
+        if (tierA !== tierB) return tierA - tierB;
         if ((b.clusterRankScore || 0) !== (a.clusterRankScore || 0)) return (b.clusterRankScore || 0) - (a.clusterRankScore || 0);
         if ((b.rankScore || 0) !== (a.rankScore || 0)) return (b.rankScore || 0) - (a.rankScore || 0);
         return new Date(b.date) - new Date(a.date);
@@ -898,9 +935,8 @@ clusterReduced.forEach(function(article) {
             html += '<div style="font-size:14px; color:var(--text-body); line-height:1.7;">' + summary + '</div>';
 
             // Change 5 Part F Step 3: subtle multi-source note
-            if (Number(article.clusterArticleCount || 1) > 1) {
-                var conf = article.clusterSourceConfidence || 'Medium';
-                html += '<div style="margin-top:4px; font-size:12px; color:var(--text-secondary); font-style:italic;">More sources for this event: ' + Number(article.clusterArticleCount) + ' | Confidence: ' + conf + '</div>';
+            if (article.contractValue) {
+                html += '<div style="margin-top:4px; font-size:13px; color:var(--navy); font-weight:600;">₹' + Number(article.contractValue).toLocaleString('en-IN') + ' Cr</div>';
             }
 
             // Source + date line
@@ -912,10 +948,6 @@ clusterReduced.forEach(function(article) {
                 html += '<span style="color:var(--champagne-silt);">|</span>';
                 html += '<span style="font-style:italic;">' + article.source + '</span>';
             }
-            html += getSourceBadge(article);
-            if (typeof getSearchLensBadge === 'function') html += getSearchLensBadge(article);
-            html += getClusterBadge(article);
-            html += getImpactBadge(article);
             // Clickable competitors as mini tags
             if (article.competitors && article.competitors.length > 0) {
                 html += '<span style="color:var(--champagne-silt);">|</span>';
@@ -1010,11 +1042,19 @@ clusterReduced.forEach(function(article) {
 
             var sorted = articles.slice().sort(function(a, b) {
                 if ((b.eventImpactScore || 0) !== (a.eventImpactScore || 0)) return (b.eventImpactScore || 0) - (a.eventImpactScore || 0);
+                var tierA = (a.competitorTier === undefined || a.competitorTier === null) ? 4 : a.competitorTier;
+                var tierB = (b.competitorTier === undefined || b.competitorTier === null) ? 4 : b.competitorTier;
+                if (tierA !== tierB) return tierA - tierB;
                 if ((b.clusterRankScore || 0) !== (a.clusterRankScore || 0)) return (b.clusterRankScore || 0) - (a.clusterRankScore || 0);
                 if ((b.rankScore || 0) !== (a.rankScore || 0)) return (b.rankScore || 0) - (a.rankScore || 0);
                 return new Date(b.date) - new Date(a.date);
             });
             var topEvents = getExecutiveClusterList(sorted).slice(0, COMPETITOR_STRATEGY_MAX_EVENTS_PER_COMPETITOR);
+
+            var bestTier = articles.reduce(function(min, a) {
+                var t = (a.competitorTier === undefined || a.competitorTier === null) ? 4 : a.competitorTier;
+                return t < min ? t : min;
+            }, 4);
 
             return {
                 name: competitorName,
@@ -1024,13 +1064,15 @@ clusterReduced.forEach(function(article) {
                 topSBUs: topSBUs,
                 topGeographies: topGeographies,
                 sourceTypes: sourceTypes,
-                topEvents: topEvents
+                topEvents: topEvents,
+                bestTier: bestTier
             };
         }
 
         function rankCompetitors(profiles) {
             return Object.keys(profiles).map(function(k) { return profiles[k]; })
                 .sort(function(a, b) {
+                    if (a.bestTier !== b.bestTier) return a.bestTier - b.bestTier;
                     if (b.highImpactEvents !== a.highImpactEvents) return b.highImpactEvents - a.highImpactEvents;
                     if (b.totalEvents !== a.totalEvents) return b.totalEvents - a.totalEvents;
                     return a.name.localeCompare(b.name);
@@ -1154,6 +1196,10 @@ clusterReduced.forEach(function(article) {
                         }
                     }
 
+                    if (article.contractValue) {
+                        html += '<div style="margin-top:4px; font-size:13px; color:var(--navy); font-weight:600;">₹' + Number(article.contractValue).toLocaleString('en-IN') + ' Cr</div>';
+                    }
+
                     var d = new Date(article.date);
                     var fd = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                     html += '<div style="margin-top:6px; font-size:12px; color:var(--text-secondary); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">';
@@ -1162,11 +1208,6 @@ clusterReduced.forEach(function(article) {
                         html += '<span style="color:var(--champagne-silt);">|</span>';
                         html += '<span style="font-style:italic;">' + article.source + '</span>';
                     }
-                    html += getImpactBadge(article);
-                    html += getSourceBadge(article);
-                    if (typeof getSearchLensBadge === 'function') html += getSearchLensBadge(article);
-                    html += getClusterBadge(article);
-                    if (typeof getMultiSignalBadge === 'function') html += getMultiSignalBadge(article);
                     var url = article.clusterPrimaryUrl || article.link;
                     if (url && url !== '#') {
                         html += '<a href="' + url + '" target="_blank" rel="noopener" style="color:var(--blue-accent, #2E6EB5); font-weight:600; text-decoration:none;">Open →</a>';
@@ -1267,6 +1308,10 @@ clusterReduced.forEach(function(article) {
                     var summary = article.clusterSummary || article.summary || article.title || 'No summary available.';
                     html += '<div style="font-size:13px; color:var(--text-body); line-height:1.6;">' + summary + '</div>';
 
+                    if (article.contractValue) {
+                        html += '<div style="margin-top:4px; font-size:13px; color:var(--navy); font-weight:600;">₹' + Number(article.contractValue).toLocaleString('en-IN') + ' Cr</div>';
+                    }
+
                     var d = new Date(article.date);
                     var fd = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                     html += '<div style="margin-top:6px; font-size:12px; color:var(--text-secondary); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">';
@@ -1275,9 +1320,6 @@ clusterReduced.forEach(function(article) {
                         html += '<span style="color:var(--champagne-silt);">|</span>';
                         html += '<span style="font-style:italic;">' + article.source + '</span>';
                     }
-                    if (typeof getImpactBadge === 'function') html += getImpactBadge(article);
-                    if (typeof getSourceBadge === 'function') html += getSourceBadge(article);
-                    if (typeof getSearchLensBadge === 'function') html += getSearchLensBadge(article);
                     var url = article.clusterPrimaryUrl || article.link;
                     if (url && url !== '#') {
                         html += '<a href="' + url + '" target="_blank" rel="noopener" style="color:var(--blue-accent, #2E6EB5); font-weight:600; text-decoration:none;">Open →</a>';
