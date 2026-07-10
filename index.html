@@ -179,12 +179,7 @@
             <button class="tab-btn active" onclick="switchTab('brief')">Executive Brief</button>
             <button class="tab-btn" onclick="switchTab('sbu_storylines')">SBU Storylines</button>
             <button class="tab-btn" onclick="switchTab('competitor_strategy')">Competitor Strategy</button>
-            if (kecUser && kecUser.is_admin) {
-                var adminBtn = document.getElementById('adminTabBtn');
-                if (adminBtn) adminBtn.style.display = 'inline-block';
-                var clientTrackerBtn = document.getElementById('clientTrackerTabBtn');
-                if (clientTrackerBtn) clientTrackerBtn.style.display = 'inline-block';
-            }
+            <button class="tab-btn" id="clientTrackerTabBtn" style="display:none;" onclick="switchTab('client_tracker')">Client / Authority Tracker</button>
             <button class="tab-btn" onclick="switchTab('executive')">Executive Summary</button>
             <button class="tab-btn" onclick="switchTab('competitor')">Competitor &amp; SBU</button>
             <button class="tab-btn" onclick="switchTab('industry')">Industry</button>
