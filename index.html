@@ -180,9 +180,9 @@
             <button class="tab-btn" onclick="switchTab('sbu_storylines')">SBU Storylines</button>
             <button class="tab-btn" onclick="switchTab('competitor_strategy')">Competitor Strategy</button>
             <button class="tab-btn" id="clientTrackerTabBtn" style="display:none;" onclick="switchTab('client_tracker')">Client / Authority Tracker</button>
-            <button class="tab-btn" onclick="switchTab('executive')">Executive Summary</button>
+            <button class="tab-btn" onclick="switchTab('executive')" style="display:none;">Executive Summary</button>
             <button class="tab-btn" onclick="switchTab('competitor')">Competitor &amp; SBU</button>
-            <button class="tab-btn" onclick="switchTab('industry')">Industry</button>
+            <button class="tab-btn" onclick="switchTab('industry')" style="display:none;">Industry</button>
 <button class="tab-btn" onclick="switchTab('assign')" style="display:none;">⚡ Assign Actions</button>
 <button class="tab-btn" id="civilCapexTabBtn" style="display:none;" onclick="switchTab('civil_capex')">🏗 Civil CapEx</button>
 <button class="tab-btn" id="adminTabBtn" style="display:none;" onclick="switchTab('admin')">⚙ Admin</button>
@@ -268,6 +268,8 @@
             if (kecUser && kecUser.is_admin) {
                 var adminBtn = document.getElementById('adminTabBtn');
                 if (adminBtn) adminBtn.style.display = 'inline-block';
+                var clientTrackerBtn = document.getElementById('clientTrackerTabBtn');
+                if (clientTrackerBtn) clientTrackerBtn.style.display = 'inline-block';
             }
             if (kecUser && (kecUser.is_admin || (kecUser.sbu_profile && kecUser.sbu_profile.toLowerCase().split(',').map(function(s){return s.trim();}).indexOf('civil') !== -1))) {
                 var civilBtn = document.getElementById('civilCapexTabBtn');
