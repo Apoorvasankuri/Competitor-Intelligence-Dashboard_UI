@@ -416,8 +416,12 @@
 }
             else if (tabName === 'competitor_strategy') c.innerHTML = renderCompetitorStrategy();
             else if (tabName === 'client_tracker') {
-                c.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏛</div><h3>Client / Authority Tracker Pending</h3><p>This tab is not wired correctly yet. Backend data can still be tested from the other tabs.</p></div>';
-         }
+                if (typeof renderClientAuthorityTracker === 'function') {
+                    c.innerHTML = renderClientAuthorityTracker();
+                } else {
+                    c.innerHTML = renderEmptyState();
+                }
+            }
 
             else if (tabName === 'executive') c.innerHTML = renderExecutiveSummary();
             else if (tabName === 'competitor') { c.innerHTML = renderCompetitorView(); setupFilterHandlers(); }
@@ -463,6 +467,9 @@ var STORYLINE_MAX_EVENTS_PER_SBU = 6;
 var COMPETITOR_STRATEGY_LOOKBACK_DAYS = 90;
 var COMPETITOR_STRATEGY_MIN_IMPACT_SCORE = 100;
 var COMPETITOR_STRATEGY_MAX_COMPETITORS = 12;
+// Item 5: Client / Authority Tracker config
+var CLIENT_TRACKER_LOOKBACK_DAYS = 90;
+var CLIENT_TRACKER_MAX_EVENTS_PER_AUTHORITY = 6;
 var COMPETITOR_STRATEGY_MAX_EVENTS_PER_COMPETITOR = 4;
 var COMPETITOR_STRATEGY_EXCLUDE_CATEGORIES = new Set(['stock market', 'industry trends', 'leadership/management']);
 
@@ -1190,6 +1197,111 @@ clusterReduced.forEach(function(article) {
         function onCompetitorStrategySBUChange(value) {
             appData.competitorStrategySBUFilter = value;
             document.getElementById('contentArea').innerHTML = renderCompetitorStrategy();
+        }
+
+        // ===== Item 5: Client / Authority Tracker =====
+        function renderClientAuthorityTracker() {
+            var lookback = new Date();
+            lookback.setDate(lookback.getDate() - CLIENT_TRACKER_LOOKBACK_DAYS);
+
+            var AUTHORITY_QUERY_TYPES = { 'site_client_authority': true, 'site_government_policy': true };
+
+            // Pool: authority-sourced items — either an authority-type query lens
+            // OR an explicitly detected client/authority on the article.
+            var pool = appData.allArticles.filter(function(a) {
+                if (new Date(a.date) < lookback) return false;
+                var cat = (a.category || '').toLowerCase();
+                if (cat === 'stock market' || cat === 'industry trends') return false;
+                var hasAuthorityLens = AUTHORITY_QUERY_TYPES[a.searchQueryType] === true;
+                var hasDetectedAuthority = a.detectedClientAuthority && a.detectedClientAuthority.trim() !== '';
+                return hasAuthorityLens || hasDetectedAuthority;
+            });
+
+            if (pool.length === 0) {
+                return '<div class="empty-state"><div class="empty-state-icon">🏛</div><h3>No Client / Authority Activity</h3><p>No client or authority items in the last ' + CLIENT_TRACKER_LOOKBACK_DAYS + ' days.</p></div>';
+            }
+
+            // Group by authority name. An article can list several authorities
+            // (comma-separated in detectedClientAuthority); it appears under each.
+            // Items with no detected authority but an authority lens are bucketed
+            // under 'Other Government / Policy'.
+            var groups = {};
+            pool.forEach(function(a) {
+                var names = (a.detectedClientAuthority || '').split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+                if (names.length === 0) names = ['Other Government / Policy'];
+                names.forEach(function(name) {
+                    if (!groups[name]) groups[name] = [];
+                    groups[name].push(a);
+                });
+            });
+
+            // Order authorities by event count (desc), then name.
+            var orderedAuthorities = Object.keys(groups).sort(function(x, y) {
+                if (groups[y].length !== groups[x].length) return groups[y].length - groups[x].length;
+                return x.localeCompare(y);
+            });
+
+            var html = '<div style="margin-bottom:20px;">';
+            html += '<h2 style="margin:0; font-family:Georgia,serif; color:var(--navy);">Client / Authority Tracker</h2>';
+            html += '<p style="margin:4px 0 0; font-size:13px; color:var(--text-secondary);">Last ' + CLIENT_TRACKER_LOOKBACK_DAYS + ' days · Grouped by client / authority</p>';
+            html += '</div>';
+
+            html += '<div class="articles-container">';
+
+            orderedAuthorities.forEach(function(authority) {
+                var events = groups[authority].slice().sort(function(a, b) {
+                    if ((b.eventImpactScore || 0) !== (a.eventImpactScore || 0)) return (b.eventImpactScore || 0) - (a.eventImpactScore || 0);
+                    if ((b.rankScore || 0) !== (a.rankScore || 0)) return (b.rankScore || 0) - (a.rankScore || 0);
+                    return new Date(b.date) - new Date(a.date);
+                });
+                var reduced = (typeof getExecutiveClusterList === 'function' ? getExecutiveClusterList(events) : events).slice(0, CLIENT_TRACKER_MAX_EVENTS_PER_AUTHORITY);
+
+                html += '<div class="article-card" style="border-left:4px solid var(--gold-accent);">';
+                html += '<div style="font-size:18px; font-weight:700; color:var(--navy); font-family:Georgia,serif;">' + authority + '</div>';
+                html += '<div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">' + groups[authority].length + ' item' + (groups[authority].length === 1 ? '' : 's') + '</div>';
+
+                html += '<ul style="list-style:none; padding:0; margin:16px 0 0;">';
+                reduced.forEach(function(article) {
+                    html += '<li class="exec-bullet" style="padding: 14px 0; border-top: 1px solid var(--champagne-silt);">';
+
+                    var summary = article.clusterSummary || article.summary || article.title || 'No summary available.';
+                    html += '<div style="font-size:13px; color:var(--text-body); line-height:1.6;">' + summary + '</div>';
+
+                    var d = new Date(article.date);
+                    var fd = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    html += '<div style="margin-top:6px; font-size:12px; color:var(--text-secondary); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">';
+                    html += '<span>' + fd + '</span>';
+                    if (article.source && article.source !== 'Unknown Source') {
+                        html += '<span style="color:var(--champagne-silt);">|</span>';
+                        html += '<span style="font-style:italic;">' + article.source + '</span>';
+                    }
+                    if (typeof getImpactBadge === 'function') html += getImpactBadge(article);
+                    if (typeof getSourceBadge === 'function') html += getSourceBadge(article);
+                    if (typeof getSearchLensBadge === 'function') html += getSearchLensBadge(article);
+                    var url = article.clusterPrimaryUrl || article.link;
+                    if (url && url !== '#') {
+                        html += '<a href="' + url + '" target="_blank" rel="noopener" style="color:var(--blue-accent, #2E6EB5); font-weight:600; text-decoration:none;">Open →</a>';
+                    }
+                    html += '</div>';
+
+                    if (article.competitors && article.competitors.length > 0) {
+                        var comps = article.competitors.filter(function(c) { return c && c !== '-'; });
+                        if (comps.length > 0) {
+                            html += '<div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">';
+                            comps.forEach(function(competitor) {
+                                html += '<span class="tag" style="font-size:11px; padding:2px 8px;">' + competitor + '</span>';
+                            });
+                            html += '</div>';
+                        }
+                    }
+
+                    html += '</li>';
+                });
+                html += '</ul></div>';
+            });
+
+            html += '</div>';
+            return html;
         }
 
         function renderCompetitorView() {
