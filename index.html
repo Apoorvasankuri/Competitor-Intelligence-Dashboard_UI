@@ -1988,7 +1988,12 @@ async function loadUsers() {
             renderUsersTable(result.users);
         }
     } catch (e) {
-        document.getElementById('usersTableWrap').innerHTML = '<div style="color:red;padding:20px;">Error loading users: ' + e.message + '</div>';
+        var wrap = document.getElementById('usersTableWrap');
+        if (wrap) {
+            wrap.innerHTML = '<div style="color:red;padding:20px;">Error loading users: ' + e.message + '</div>';
+        } else {
+            console.error('loadUsers failed and usersTableWrap is not in the DOM:', e);
+        }
     }
 }
 
