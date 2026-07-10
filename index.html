@@ -478,6 +478,7 @@ var COMPETITOR_STRATEGY_MAX_COMPETITORS = 12;
 // Item 5: Client / Authority Tracker config
 var CLIENT_TRACKER_LOOKBACK_DAYS = 90;
 var CLIENT_TRACKER_MAX_EVENTS_PER_AUTHORITY = 6;
+var CLIENT_TRACKER_ITEMS_PER_SBU_STORYLINE = 3;
 var COMPETITOR_STRATEGY_MAX_EVENTS_PER_COMPETITOR = 4;
 var COMPETITOR_STRATEGY_EXCLUDE_CATEGORIES = new Set(['stock market', 'industry trends', 'leadership/management']);
 
@@ -619,6 +620,30 @@ function renderExecutiveSummary() {
 
             html += '</div>';
             return html;
+        }
+
+        function getAuthorityItemsForSBU(sbu) {
+            var lookback = new Date();
+            lookback.setDate(lookback.getDate() - CLIENT_TRACKER_LOOKBACK_DAYS);
+            var AUTHORITY_QUERY_TYPES = { 'site_client_authority': true, 'site_government_policy': true };
+            var sbuLower = sbu.toLowerCase();
+
+            var items = appData.allArticles.filter(function(a) {
+                if (new Date(a.date) < lookback) return false;
+                var cat = (a.category || '').toLowerCase();
+                if (cat === 'stock market' || cat === 'industry trends') return false;
+                var hasAuthorityLens = AUTHORITY_QUERY_TYPES[a.searchQueryType] === true;
+                var hasDetectedAuthority = a.detectedClientAuthority && a.detectedClientAuthority.trim() !== '';
+                if (!(hasAuthorityLens || hasDetectedAuthority)) return false;
+                return (a.sbu || []).map(function(x) { return String(x).toLowerCase(); }).indexOf(sbuLower) !== -1;
+            });
+
+            items.sort(function(a, b) {
+                if ((b.eventImpactScore || 0) !== (a.eventImpactScore || 0)) return (b.eventImpactScore || 0) - (a.eventImpactScore || 0);
+                return new Date(b.date) - new Date(a.date);
+            });
+
+            return (typeof getExecutiveClusterList === 'function' ? getExecutiveClusterList(items) : items).slice(0, CLIENT_TRACKER_ITEMS_PER_SBU_STORYLINE);
         }
 
         function renderSBUStorylines() {
