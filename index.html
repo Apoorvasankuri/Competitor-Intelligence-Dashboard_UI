@@ -782,7 +782,7 @@ function renderExecutiveSummary() {
             visibleSBUs.forEach(function(sbu) {
                 var events = storylines[sbu];
 
-                html += '<div class="article-card" style="border-top:3px solid var(--blue-border); background:var(--watermark-edge);">';
+                html += '<div class="article-card" style="border-top:3px solid var(--blue-border);">';
                 html += '<div class="category-header" style="margin: -24px -24px 8px -24px; border-radius: 8px 8px 0 0;">' + sbu.toUpperCase() + '</div>';
                 html += '<div style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">' + events.length + ' event' + (events.length === 1 ? '' : 's') + ' shown</div>';
 
