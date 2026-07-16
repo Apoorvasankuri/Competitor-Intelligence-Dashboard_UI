@@ -632,8 +632,13 @@ function renderExecutiveSummary() {
             }
             var kept = [];
             list.forEach(function(article) {
-                var hasCluster = !(article.clusterId === null || article.clusterId === undefined || article.clusterId === '');
-                var isDuplicate = !hasCluster && kept.some(function(k) {
+                var isDuplicate = kept.some(function(k) {
+                    // Defensive: two survivors sharing the same real clusterId
+                    // shouldn't normally happen post getExecutiveClusterList,
+                    // but treat as duplicate immediately if it does.
+                    if (article.clusterId !== null && article.clusterId !== undefined && article.clusterId !== '' &&
+                        article.clusterId === k.clusterId) return true;
+
                     var summary1 = article.summary || article.title || '';
                     var summary2 = k.summary || k.title || '';
                     var jaccard = jaccardSimilarity(summary1, summary2);
