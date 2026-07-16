@@ -1213,7 +1213,7 @@ clusterReduced.forEach(function(article) {
             ranked.forEach(function(p) {
                 html += '<div class="article-card" style="border-left:4px solid var(--navy);">';
                 html += '<div style="font-size:18px; font-weight:700; color:var(--navy); font-family:Georgia,serif;">' + p.name + '</div>';
-                html += '<div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">' + p.totalEvents + ' event' + (p.totalEvents === 1 ? '' : 's') + ' · ' + p.highImpactEvents + ' high-impact</div>';
+                
 
                 function chipRow(label, items, fmt) {
                     if (!items || items.length === 0) return '';
