@@ -1224,10 +1224,7 @@ clusterReduced.forEach(function(article) {
                     return row + '</div>';
                 }
 
-                html += chipRow('Top Focus', p.topCategories, function(it) { return it.category + ' × ' + it.count; });
-                html += chipRow('SBUs', p.topSBUs, function(it) { return it.sbu + ' × ' + it.count; });
-                html += chipRow('Geographies', p.topGeographies, function(it) { return it.geography + ' × ' + it.count; });
-                html += chipRow('Sources', p.sourceTypes, function(it) { return it.sourceType + ' × ' + it.count; });
+                
 
                 if (!p.topEvents || p.topEvents.length === 0) {
                     html += '<div style="margin-top:14px; font-size:13px; color:var(--text-secondary); font-style:italic;">No high-impact events to display for this competitor.</div>';
