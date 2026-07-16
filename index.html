@@ -557,7 +557,7 @@ function renderExecutiveSummary() {
                     if ((b.rankScore || 0) !== (a.rankScore || 0)) return (b.rankScore || 0) - (a.rankScore || 0);
                     return new Date(b.date) - new Date(a.date);
                 });
-                var reduced = getExecutiveClusterList(grouped[cat]);
+                var reduced = getDedupedEventList(grouped[cat]);
                 grouped[cat] = reduced.slice(0, BRIEF_MAX_PER_CATEGORY);
             });
 
@@ -1358,7 +1358,7 @@ clusterReduced.forEach(function(article) {
                     if ((b.rankScore || 0) !== (a.rankScore || 0)) return (b.rankScore || 0) - (a.rankScore || 0);
                     return new Date(b.date) - new Date(a.date);
                 });
-                var reduced = (typeof getExecutiveClusterList === 'function' ? getExecutiveClusterList(events) : events).slice(0, CLIENT_TRACKER_MAX_EVENTS_PER_AUTHORITY);
+                var reduced = (typeof getDedupedEventList === 'function' ? getDedupedEventList(events) : events).slice(0, CLIENT_TRACKER_MAX_EVENTS_PER_AUTHORITY);
 
                 html += '<div class="article-card" style="border-left:4px solid var(--gold-accent);">';
                 html += '<div style="font-size:18px; font-weight:700; color:var(--navy); font-family:Georgia,serif;">' + authority + '</div>';
