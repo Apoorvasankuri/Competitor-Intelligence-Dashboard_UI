@@ -1112,7 +1112,7 @@ clusterReduced.forEach(function(article) {
                 if ((b.rankScore || 0) !== (a.rankScore || 0)) return (b.rankScore || 0) - (a.rankScore || 0);
                 return new Date(b.date) - new Date(a.date);
             });
-            var topEvents = getExecutiveClusterList(sorted).slice(0, COMPETITOR_STRATEGY_MAX_EVENTS_PER_COMPETITOR);
+            var topEvents = getDedupedEventList(sorted).slice(0, COMPETITOR_STRATEGY_MAX_EVENTS_PER_COMPETITOR);
 
             var bestTier = articles.reduce(function(min, a) {
                 var t = (a.competitorTier === undefined || a.competitorTier === null) ? 4 : a.competitorTier;
