@@ -3201,13 +3201,10 @@ function renderHighlights() {
   var cards = h.projects.map(function(p) {
     var eventsHtml = (p.recent_events && p.recent_events.length > 0)
       ? '<ul class="cx-events-list">' + p.recent_events.map(function(e) {
-          return '<li><strong>' + (e.event_date || '—') + '</strong> — ' +
-                 (e.event_description || 'No description') + '</li>';
+          return '<li><strong>' + (e.date || '—') + '</strong> — ' +
+                 (e.description || 'No description') + '</li>';
         }).join('') + '</ul>'
-      : '<p class="cx-na" style="margin-top:8px;">' +
-          (p.events_error ? 'Could not load events: ' + p.events_error
-                           : 'No events in the last ' + h.criteria.months_back + ' months.') +
-        '</p>';
+      : '<p class="cx-na" style="margin-top:8px;">No events in the last ' + h.criteria.months_back + ' months.</p>';
 
     return '<div class="cx-glass cx-highlight-card" style="margin-bottom:16px;padding:18px;">' +
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
@@ -3243,8 +3240,9 @@ window.initCivilCapex = async function() {
   cx.initialized = false;
   cx.error = null;
   try {
-    var [summaryRes, projectsRes, highlightsRes] = await Promise.all([fetchSummary(), fetchCivilHighlights()
-         ]);
+    var [summaryRes, projectsRes, highlightsRes] = await Promise.all([
+      fetchSummary(), fetchProjects(), fetchCivilHighlights()
+    ]);
     cx.summary = summaryRes;
     cx.projects = projectsRes.projects || [];
     cx.total = projectsRes.total || 0;
