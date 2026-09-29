@@ -2722,7 +2722,7 @@ input.focus();
 /* KPI row */
 .cx-kpi-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 28px;
 }
@@ -3042,8 +3042,14 @@ input.focus();
 }
 .cx-modal-field span.cx-na { color: rgba(226,232,240,0.25); font-style: italic; }
 
+/* Segment / Region filter bar */
+.cx-topfilters { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; padding: 18px 24px; margin-bottom: 24px; }
+.cx-topfilter { display: flex; flex-direction: column; gap: 6px; min-width: 220px; }
+.cx-topfilter label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(226,232,240,0.55); }
+.cx-topfilter-note { margin-left: auto; font-size: 12px; color: rgba(226,232,240,0.45); }
+
 /* Responsive */
-@media (max-width: 1280px) { .cx-kpi-row { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 1280px) { .cx-kpi-row { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 900px)  {
   .cx-kpi-row { grid-template-columns: 1fr 1fr; }
   .cx-charts-grid { grid-template-columns: 1fr; }
@@ -3072,6 +3078,8 @@ var cx = {
   stateFilter: '',
   industryFilter: '',
   statusFilter: '',
+  segment: 'All',
+  region: 'All',
   sortBy: 'project_cost',
   sortDir: 'desc',
   loading: false,
@@ -3139,7 +3147,8 @@ function animateCount(el, target, isCrore) {
 
 /* ── API calls ─────────────────────────────────────────────────────── */
 async function fetchSummary() {
-  var res = await fetch(getAPI() + '/api/cmie/summary?token=' + getToken());
+  var params = new URLSearchParams({ token: getToken(), segment: cx.segment, region: cx.region });
+  var res = await fetch(getAPI() + '/api/cmie/summary?' + params.toString());
   if (!res.ok) throw new Error('Summary API error ' + res.status);
   return res.json();
 }
@@ -3160,6 +3169,8 @@ async function fetchProjects() {
   if (cx.stateFilter)  params.set('state', cx.stateFilter);
   if (cx.industryFilter) params.set('industry', cx.industryFilter);
   if (cx.statusFilter) params.set('status', cx.statusFilter);
+  params.set('segment', cx.segment);
+  params.set('region', cx.region);
   var res = await fetch(getAPI() + '/api/cmie/projects?' + params.toString());
   if (!res.ok) throw new Error('Projects API error ' + res.status);
   return res.json();
@@ -3169,6 +3180,7 @@ async function fetchProjects() {
 window.renderCivilCapexTab = function() {
   return '<div class="cx-root" id="cxRoot"><div class="cx-inner" id="cxInner">' +
     renderSkeletonHero() +
+    '<div id="cxTopFilters"></div>' +
     '<div id="cxKpiRow" class="cx-kpi-row">' + renderSkeletonKpis() + '</div>' +
     '<div id="cxChartsGrid" class="cx-charts-grid">' + renderSkeletonCharts() + '</div>' +
     '<div id="cxFilters"></div>' +
@@ -3256,6 +3268,7 @@ window.initCivilCapex = async function() {
 
 function renderAll() {
   renderHero();
+  renderTopFilters();
   renderKPIs();
   renderCharts();
   renderFilters();
@@ -3304,7 +3317,7 @@ function updateClock() {
 
 /* ── KPIs ─────────────────────────────────────────────────────────── */
 function renderSkeletonKpis() {
-  return Array(5).fill(0).map(function() {
+  return Array(4).fill(0).map(function() {
     return '<div class="cx-glass cx-kpi">' +
       '<div class="cx-skeleton" style="width:80px;height:10px;margin-bottom:16px;"></div>' +
       '<div class="cx-skeleton" style="width:120px;height:38px;margin-bottom:8px;"></div>' +
@@ -3316,18 +3329,14 @@ function renderKPIs() {
   var el = document.getElementById('cxKpiRow');
   if (!el || !cx.summary) return;
   var s = cx.summary;
-  var byStatus = s.by_status || {};
-  var activeCount = s.active_projects || 0;
-  var completedCount = byStatus['Completed'] || 0;
-  var holdCount = (byStatus['No Information'] || 0);
-  var announcedCount = byStatus['Announced'] || 0;
+    var scope = (cx.segment === 'All' ? 'All segments' : cx.segment) + ' · ' +
+              (cx.region === 'All' ? 'All regions' : cx.region);
 
   var kpis = [
-    { label: 'Total Projects', value: s.total_projects, sub: 'across all states', icon: '🏗', cls: 'cx-kpi--total', animate: true },
-    { label: 'Total Investment', value: s.total_project_cost, sub: 'Rs. million basis', icon: '₹', cls: 'cx-kpi--invest', isCrore: true, animate: true },
-    { label: 'Under Implementation', value: activeCount, sub: 'active pipeline', icon: '⚡', cls: 'cx-kpi--active', animate: true },
-    { label: 'Completed', value: completedCount, sub: 'delivered projects', icon: '✓', cls: 'cx-kpi--complete', animate: true },
-    { label: 'Announced', value: announcedCount, sub: 'in planning stage', icon: '📋', cls: 'cx-kpi--hold', animate: true },
+    { label: 'No. of Projects', value: s.total_projects, sub: scope, icon: '🏗', cls: 'cx-kpi--total', animate: true },
+    { label: 'Investment', value: s.total_project_cost, sub: 'total project cost', icon: '₹', cls: 'cx-kpi--invest', isCrore: true, animate: true },
+    { label: 'Under Implementation', value: s.under_implementation, sub: 'projects', icon: '⚡', cls: 'cx-kpi--active', animate: true },
+    { label: 'Announced', value: s.announced, sub: 'projects', icon: '📋', cls: 'cx-kpi--hold', animate: true },
   ];
 
   el.innerHTML = kpis.map(function(k, i) {
@@ -3368,14 +3377,16 @@ function renderCharts() {
   el.innerHTML =
     '<div class="cx-glass cx-chart-card"><div class="cx-chart-title">Projects by State</div>' +
       '<div class="cx-chart-wrap"><canvas id="cxStateChart"></canvas></div></div>' +
-    '<div class="cx-glass cx-chart-card"><div class="cx-chart-title">Industry Distribution</div>' +
+    '<div class="cx-glass cx-chart-card"><div class="cx-chart-title">' +
+      (cx.segment !== 'All' ? cx.segment + ' Projects by Region' : 'Projects by Segment') + '</div>' +
       '<div class="cx-chart-wrap"><canvas id="cxIndustryChart"></canvas></div></div>';
 
   var byState = cx.summary.by_state || {};
   var stateLabels = Object.keys(byState).slice(0, 10);
   var stateVals   = stateLabels.map(function(k) { return byState[k]; });
 
-  var byIndustry = cx.summary.by_industry || {};
+  // Pie: by segment; when one segment is selected, split it by region instead
+  var byIndustry = (cx.segment !== 'All' ? cx.summary.by_region : cx.summary.by_segment) || {};
   var indLabels = Object.keys(byIndustry);
   var indVals   = indLabels.map(function(k) { return byIndustry[k]; });
 
@@ -3421,6 +3432,51 @@ function renderCharts() {
   }, 50);
 }
 
+/* ── Segment / Region filters (top) ───────────────────────────────── */
+function renderTopFilters() {
+  var el = document.getElementById('cxTopFilters');
+  if (!el) return;
+  var s = cx.summary || {};
+  function opts(list, current, allLabel) {
+    return (list || ['All']).map(function(o) {
+      return '<option value="' + o + '"' + (o === current ? ' selected' : '') + '>' +
+        (o === 'All' ? allLabel : o) + '</option>';
+    }).join('');
+  }
+  el.innerHTML =
+    '<div class="cx-glass cx-topfilters">' +
+      '<div class="cx-topfilter"><label for="cxSegFilter">Segment</label>' +
+        '<select class="cx-select" id="cxSegFilter" onchange="cxTopFilter()">' +
+          opts(s.segment_options, cx.segment, 'All Segments') + '</select></div>' +
+      '<div class="cx-topfilter"><label for="cxRegFilter">Region</label>' +
+        '<select class="cx-select" id="cxRegFilter" onchange="cxTopFilter()">' +
+          opts(s.region_options, cx.region, 'All Regions') + '</select></div>' +
+      '<div class="cx-topfilter-note">KPIs, charts and the project table follow these filters</div>' +
+    '</div>';
+}
+
+window.cxTopFilter = async function() {
+  var seg = document.getElementById('cxSegFilter');
+  var reg = document.getElementById('cxRegFilter');
+  cx.segment = seg ? seg.value : 'All';
+  cx.region  = reg ? reg.value : 'All';
+  // Clear the lower table filters, as their options depend on the selection
+  cx.search = ''; cx.stateFilter = ''; cx.industryFilter = ''; cx.statusFilter = '';
+  cx.page = 1;
+  try {
+    var [summaryRes, projectsRes] = await Promise.all([fetchSummary(), fetchProjects()]);
+    cx.summary  = summaryRes;
+    cx.projects = projectsRes.projects || [];
+    cx.total    = projectsRes.total || 0;
+    renderTopFilters();
+    renderKPIs();
+    renderCharts();
+    renderFilters();
+    renderTable();
+  } catch(err) {
+    renderError(err.message);
+  }
+};
 /* ── Filters ──────────────────────────────────────────────────────── */
 function renderFilters() {
   var el = document.getElementById('cxFilters');
@@ -3481,6 +3537,8 @@ function renderTable() {
       '<td>' + name + '</td>' +
       '<td>' + promoter + '</td>' +
       '<td>' + (p.state || '—') + '</td>' +
+      '<td>' + (p.segment || '—') + '</td>' +
+      '<td>' + (p.region || '—') + '</td>' +
       '<td>' + (p.industry || '—') + '</td>' +
       '<td><span class="cx-cost">' + fmtMillionToDisplay(p.project_cost) + '</span></td>' +
       '<td>' + statusBadge(p.project_status) + '</td>' +
@@ -3515,6 +3573,8 @@ function renderTable() {
             th('Project Name', 'project_name') +
             th('Company', 'promoter_name') +
             th('State', 'state') +
+            th('Segment', 'segment') +
+            th('Region', 'region') +
             th('Industry', 'industry') +
             th('Cost (₹ Cr)', 'project_cost') +
             '<th>Status</th>' +
@@ -3736,8 +3796,8 @@ window.cxPage = function(page) {
 
 window.cxExport = function() {
   if (!cx.projects || !cx.projects.length) return;
-  var cols = ['cmie_project_id','project_name','promoter_name','state','industry','project_cost','project_status','expected_completion'];
-  var headers = ['Project ID','Project Name','Company','State','Industry','Cost (Rs.million)','Status','Expected Completion'];
+    var cols = ['cmie_project_id','project_name','promoter_name','state','segment','region','industry','project_cost','project_status','expected_completion'];
+  var headers = ['Project ID','Project Name','Company','State','Segment','Region','Industry','Cost (Rs.million)','Status','Expected Completion'];
   var rows = [headers.join(',')];
   cx.projects.forEach(function(p) {
     rows.push(cols.map(function(c) {
