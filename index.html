@@ -2722,7 +2722,7 @@ input.focus();
 /* KPI row */
 .cx-kpi-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin-bottom: 28px;
 }
@@ -3080,6 +3080,7 @@ var cx = {
   statusFilter: '',
   segment: 'All',
   region: 'All',
+  valueRange: 'All',
   sortBy: 'project_cost',
   sortDir: 'desc',
   loading: false,
@@ -3147,7 +3148,7 @@ function animateCount(el, target, isCrore) {
 
 /* ── API calls ─────────────────────────────────────────────────────── */
 async function fetchSummary() {
-  var params = new URLSearchParams({ token: getToken(), segment: cx.segment, region: cx.region });
+  var params = new URLSearchParams({ token: getToken(), segment: cx.segment, region: cx.region, value_range: cx.valueRange });
   var res = await fetch(getAPI() + '/api/cmie/summary?' + params.toString());
   if (!res.ok) throw new Error('Summary API error ' + res.status);
   return res.json();
@@ -3171,6 +3172,7 @@ async function fetchProjects() {
   if (cx.statusFilter) params.set('status', cx.statusFilter);
   params.set('segment', cx.segment);
   params.set('region', cx.region);
+  params.set('value_range', cx.valueRange);
   var res = await fetch(getAPI() + '/api/cmie/projects?' + params.toString());
   if (!res.ok) throw new Error('Projects API error ' + res.status);
   return res.json();
@@ -3317,7 +3319,7 @@ function updateClock() {
 
 /* ── KPIs ─────────────────────────────────────────────────────────── */
 function renderSkeletonKpis() {
-  return Array(4).fill(0).map(function() {
+  return Array(2).fill(0).map(function() {
     return '<div class="cx-glass cx-kpi">' +
       '<div class="cx-skeleton" style="width:80px;height:10px;margin-bottom:16px;"></div>' +
       '<div class="cx-skeleton" style="width:120px;height:38px;margin-bottom:8px;"></div>' +
@@ -3329,14 +3331,14 @@ function renderKPIs() {
   var el = document.getElementById('cxKpiRow');
   if (!el || !cx.summary) return;
   var s = cx.summary;
-    var scope = (cx.segment === 'All' ? 'All segments' : cx.segment) + ' · ' +
-              (cx.region === 'All' ? 'All regions' : cx.region);
+  var band = (s.value_range_options || []).filter(function(o) { return o.value === cx.valueRange; })[0];
+  var scope = (cx.segment === 'All' ? 'All segments' : cx.segment) + ' · ' +
+              (cx.region === 'All' ? 'All regions' : cx.region) + ' · ' +
+              (cx.valueRange === 'All' || !band ? 'All values' : band.label);
 
   var kpis = [
     { label: 'No. of Projects', value: s.total_projects, sub: scope, icon: '🏗', cls: 'cx-kpi--total', animate: true },
     { label: 'Investment', value: s.total_project_cost, sub: 'total project cost', icon: '₹', cls: 'cx-kpi--invest', isCrore: true, animate: true },
-    { label: 'Under Implementation', value: s.under_implementation, sub: 'projects', icon: '⚡', cls: 'cx-kpi--active', animate: true },
-    { label: 'Announced', value: s.announced, sub: 'projects', icon: '📋', cls: 'cx-kpi--hold', animate: true },
   ];
 
   el.innerHTML = kpis.map(function(k, i) {
@@ -3451,6 +3453,11 @@ function renderTopFilters() {
       '<div class="cx-topfilter"><label for="cxRegFilter">Region</label>' +
         '<select class="cx-select" id="cxRegFilter" onchange="cxTopFilter()">' +
           opts(s.region_options, cx.region, 'All Regions') + '</select></div>' +
+      '<div class="cx-topfilter"><label for="cxValFilter">Project Value</label>' +
+        '<select class="cx-select" id="cxValFilter" onchange="cxTopFilter()">' +
+          (s.value_range_options || [{ value: 'All', label: 'All Values' }]).map(function(o) {
+            return '<option value="' + o.value + '"' + (o.value === cx.valueRange ? ' selected' : '') + '>' + o.label + '</option>';
+          }).join('') + '</select></div>' +
       '<div class="cx-topfilter-note">KPIs, charts and the project table follow these filters</div>' +
     '</div>';
 }
@@ -3460,6 +3467,8 @@ window.cxTopFilter = async function() {
   var reg = document.getElementById('cxRegFilter');
   cx.segment = seg ? seg.value : 'All';
   cx.region  = reg ? reg.value : 'All';
+  var val = document.getElementById('cxValFilter');
+  cx.valueRange = val ? val.value : 'All';
   // Clear the lower table filters, as their options depend on the selection
   cx.search = ''; cx.stateFilter = ''; cx.industryFilter = ''; cx.statusFilter = '';
   cx.page = 1;
