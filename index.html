@@ -3048,6 +3048,30 @@ input.focus();
 .cx-topfilter label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(226,232,240,0.55); }
 .cx-topfilter-note { margin-left: auto; font-size: 12px; color: rgba(226,232,240,0.45); }
 
+/* Excel-style multi-select filters */
+.cx-topfilters { position: relative; z-index: 20; }
+.cx-ms { position: relative; }
+.cx-ms-btn { width: 100%; min-width: 220px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cx-ms-panel {
+  position: absolute; top: 100%; left: 0; margin-top: 6px; z-index: 50;
+  min-width: 260px; padding: 8px;
+  background: #1e293b; border: 1px solid rgba(255,255,255,0.14); border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+}
+.cx-ms-list { max-height: 260px; overflow-y: auto; }
+.cx-topfilter .cx-ms-item {
+  display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px; cursor: pointer;
+  font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; color: #e2e8f0;
+}
+.cx-topfilter .cx-ms-item:hover { background: rgba(255,255,255,0.06); }
+.cx-ms-item input { accent-color: #3B82F6; width: 15px; height: 15px; cursor: pointer; }
+.cx-topfilter .cx-ms-all { border-bottom: 1px solid rgba(255,255,255,0.1); border-radius: 8px 8px 0 0; margin-bottom: 4px; }
+.cx-ms-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 8px 4px 2px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 4px; }
+.cx-ms-actions button { padding: 7px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Montserrat', sans-serif; }
+.cx-ms-ok { background: #3B82F6; color: #fff; border: 1px solid #3B82F6; }
+.cx-ms-ok:disabled { opacity: 0.4; cursor: not-allowed; }
+.cx-ms-cancel { background: transparent; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.18); }
+
 /* Responsive */
 @media (max-width: 1280px) { .cx-kpi-row { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 900px)  {
@@ -3078,9 +3102,9 @@ var cx = {
   stateFilter: '',
   industryFilter: '',
   statusFilter: '',
-  segment: 'All',
-  region: 'All',
-  valueRange: 'All',
+  segment: [],      // empty list = All
+  region: [],
+  valueRange: [],
   sortBy: 'project_cost',
   sortDir: 'desc',
   loading: false,
@@ -3148,7 +3172,7 @@ function animateCount(el, target, isCrore) {
 
 /* ── API calls ─────────────────────────────────────────────────────── */
 async function fetchSummary() {
-  var params = new URLSearchParams({ token: getToken(), segment: cx.segment, region: cx.region, value_range: cx.valueRange });
+    var params = new URLSearchParams({ token: getToken(), segment: cxJoin(cx.segment), region: cxJoin(cx.region), value_range: cxJoin(cx.valueRange) });
   var res = await fetch(getAPI() + '/api/cmie/summary?' + params.toString());
   if (!res.ok) throw new Error('Summary API error ' + res.status);
   return res.json();
@@ -3170,9 +3194,9 @@ async function fetchProjects() {
   if (cx.stateFilter)  params.set('state', cx.stateFilter);
   if (cx.industryFilter) params.set('industry', cx.industryFilter);
   if (cx.statusFilter) params.set('status', cx.statusFilter);
-  params.set('segment', cx.segment);
-  params.set('region', cx.region);
-  params.set('value_range', cx.valueRange);
+  params.set('segment', cxJoin(cx.segment));
+  params.set('region', cxJoin(cx.region));
+  params.set('value_range', cxJoin(cx.valueRange));
   var res = await fetch(getAPI() + '/api/cmie/projects?' + params.toString());
   if (!res.ok) throw new Error('Projects API error ' + res.status);
   return res.json();
@@ -3331,10 +3355,7 @@ function renderKPIs() {
   var el = document.getElementById('cxKpiRow');
   if (!el || !cx.summary) return;
   var s = cx.summary;
-  var band = (s.value_range_options || []).filter(function(o) { return o.value === cx.valueRange; })[0];
-  var scope = (cx.segment === 'All' ? 'All segments' : cx.segment) + ' · ' +
-              (cx.region === 'All' ? 'All regions' : cx.region) + ' · ' +
-              (cx.valueRange === 'All' || !band ? 'All values' : band.label);
+  var scope = CX_FILTERS.map(function(f) { return cxMsSummary(f, f.opts(s)); }).join(' · ');
 
   var kpis = [
     { label: 'No. of Projects', value: s.total_projects, sub: scope, icon: '🏗', cls: 'cx-kpi--total', animate: true },
@@ -3380,7 +3401,7 @@ function renderCharts() {
     '<div class="cx-glass cx-chart-card"><div class="cx-chart-title">Projects by State</div>' +
       '<div class="cx-chart-wrap"><canvas id="cxStateChart"></canvas></div></div>' +
     '<div class="cx-glass cx-chart-card"><div class="cx-chart-title">' +
-      (cx.segment !== 'All' ? cx.segment + ' Projects by Region' : 'Projects by Segment') + '</div>' +
+      (cx.segment.length === 1 ? cx.segment[0] + ' Projects by Region' : 'Projects by Segment') + '</div>' +
       '<div class="cx-chart-wrap"><canvas id="cxIndustryChart"></canvas></div></div>';
 
   var byState = cx.summary.by_state || {};
@@ -3388,7 +3409,7 @@ function renderCharts() {
   var stateVals   = stateLabels.map(function(k) { return byState[k]; });
 
   // Pie: by segment; when one segment is selected, split it by region instead
-  var byIndustry = (cx.segment !== 'All' ? cx.summary.by_region : cx.summary.by_segment) || {};
+  var byIndustry = (cx.segment.length === 1 ? cx.summary.by_region : cx.summary.by_segment) || {};
   var indLabels = Object.keys(byIndustry);
   var indVals   = indLabels.map(function(k) { return byIndustry[k]; });
 
@@ -3434,7 +3455,7 @@ function renderCharts() {
   }, 50);
 }
 
-/* ── Segment / Region filters (top) ───────────────────────────────── */
+/* ── Filters ──────────────────────────────────────────────────────── */
 function renderTopFilters() {
   var el = document.getElementById('cxTopFilters');
   if (!el) return;
